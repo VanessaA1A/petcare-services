@@ -1,0 +1,13 @@
+created session {
+  id: 9,
+  token_sesion: 'e024c951-be2f-4716-835a-838ee3b5e875',
+  fecha_inicio: 2026-05-12T07:13:23.893Z
+}
+me lookup {
+  "session_id": 9,
+  "token_sesion": "e024c951-be2f-4716-835a-838ee3b5e875",
+  "usuario_id": 1,
+  "username": "test1",
+  "email": "test1@example.com",
+  "rol": "gestor"
+}

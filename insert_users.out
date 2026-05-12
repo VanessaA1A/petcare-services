@@ -1,0 +1,80 @@
+[
+  {
+    "existing": true,
+    "id": 1,
+    "username": "test1",
+    "email": "test1@example.com",
+    "rol": "gestor",
+    "created_at": "2026-05-12T05:40:39.618Z"
+  },
+  {
+    "existing": true,
+    "id": 2,
+    "username": "test2",
+    "email": "test2@example.com",
+    "rol": "gestor",
+    "created_at": "2026-05-12T05:40:39.618Z"
+  },
+  {
+    "existing": true,
+    "id": 3,
+    "username": "test3",
+    "email": "test3@example.com",
+    "rol": "gestor",
+    "created_at": "2026-05-12T05:40:39.618Z"
+  },
+  {
+    "existing": true,
+    "id": 4,
+    "username": "test4",
+    "email": "test4@example.com",
+    "rol": "gestor",
+    "created_at": "2026-05-12T05:40:39.618Z"
+  },
+  {
+    "existing": true,
+    "id": 5,
+    "username": "test5",
+    "email": "test5@example.com",
+    "rol": "gestor",
+    "created_at": "2026-05-12T05:40:39.618Z"
+  }
+]
+--- Confirm in DB ---
+[
+  {
+    "id": 1,
+    "username": "test1",
+    "email": "test1@example.com",
+    "rol": "gestor",
+    "created_at": "2026-05-12T05:40:39.618Z"
+  },
+  {
+    "id": 2,
+    "username": "test2",
+    "email": "test2@example.com",
+    "rol": "gestor",
+    "created_at": "2026-05-12T05:40:39.618Z"
+  },
+  {
+    "id": 3,
+    "username": "test3",
+    "email": "test3@example.com",
+    "rol": "gestor",
+    "created_at": "2026-05-12T05:40:39.618Z"
+  },
+  {
+    "id": 4,
+    "username": "test4",
+    "email": "test4@example.com",
+    "rol": "gestor",
+    "created_at": "2026-05-12T05:40:39.618Z"
+  },
+  {
+    "id": 5,
+    "username": "test5",
+    "email": "test5@example.com",
+    "rol": "gestor",
+    "created_at": "2026-05-12T05:40:39.618Z"
+  }
+]

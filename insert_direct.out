@@ -1,0 +1,4 @@
+insert err error: la sintaxis de entrada no es válida para el enum rol_usuario: «cliente»
+    at C:\proyectos\petcare-services\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async C:\proyectos\petcare-services\scripts\direct_insert_test.js:5:15

@@ -43,4 +43,11 @@ async function recoverPassword(req, res) {
   }
 }
 
-module.exports = { login, recoverPassword };
+async function me(req, res) {
+  // sessionAuth middleware sets req.user
+  if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+  res.json({ user: req.user, session: req.session });
+}
+
+module.exports = { login, recoverPassword, me };
+

@@ -1,0 +1,3 @@
+current roles: [ 'administrador', 'propietario', 'gestor' ]
+Adding role cliente to enum rol_usuario...
+Added cliente

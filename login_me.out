@@ -1,0 +1,12 @@
+login 200 {"user":{"id":1,"username":"test1","email":"test1@example.com"},"session":{"id":8,"token_sesion":"1c038c77-de7f-433b-b47c-2801f5c48cb6","fecha_inicio":"2026-05-12T07:09:25.155Z"}}
+me 404 <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Cannot GET /api/auth/me</pre>
+</body>
+</html>
+
