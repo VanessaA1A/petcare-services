@@ -1,5 +1,0 @@
-Logging in test1...
-Login status 200
-Token: 5544a583-9574-4531-b31c-372f81b0a0c5
-ME status 200
-ME body {"user":{"id":1,"username":"test1","email":"test1@example.com","rol":"gestor"},"session":{"id":11,"token":"5544a583-9574-4531-b31c-372f81b0a0c5"}}

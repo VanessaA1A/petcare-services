@@ -81,12 +81,32 @@ async function updateUser(req, res) {
     const { id } = req.params;
     const { username, email, password, rol, is_active } = req.body;
     const hashed = password ? hashPassword(password) : null;
+    let roleToPass = rol ?? null;
+
+    if (rol != null) {
+      const allowedRoles = await getAllowedRoles();
+      if (allowedRoles.length > 0 && !allowedRoles.includes(rol)) {
+        return res.status(400).json({ error: `Invalid role '${rol}'. Allowed roles: ${allowedRoles.join(', ')}` });
+      }
+    }
+
     const text = `UPDATE usuarios SET username = COALESCE($1, username), email = COALESCE($2, email), password_hash = COALESCE($3, password_hash), rol = COALESCE($4::rol_usuario, rol), is_active = COALESCE($5, is_active) WHERE id = $6 RETURNING id, username, email, rol, is_active`;
-    const result = await db.query(text, [username, email, hashed, rol, is_active, id]);
+    const result = await db.query(text, [username, email, hashed, roleToPass, is_active, id]);
     if (result.rowCount === 0) return res.status(404).json({ error: "User not found" });
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
+    if (err.code === '23505') {
+      const message = err.constraint === 'usuarios_username_key'
+        ? 'username already exists'
+        : err.constraint === 'usuarios_email_key'
+          ? 'email already exists'
+          : 'Duplicate value';
+      return res.status(400).json({ error: message });
+    }
+    if (err.code === '22P02' && err.message.includes('rol_usuario')) {
+      return res.status(400).json({ error: `Invalid role '${rol}'` });
+    }
     res.status(500).json({ error: "Error updating user" });
   }
 }
