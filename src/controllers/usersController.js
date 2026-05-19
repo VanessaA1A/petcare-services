@@ -1,6 +1,12 @@
 const db = require("../db");
 const { hashPassword } = require("../utils/hash");
 const { createSession, logActivity } = require("../utils/activity");
+const { mapDbRoleToApi } = require('../utils/roles');
+
+function formatUser(user) {
+  const role = mapDbRoleToApi(user.rol);
+  return { ...user, rol: role, role };
+}
 
 async function getAllowedRoles() {
   try {
@@ -36,6 +42,7 @@ async function createUser(req, res) {
     const text = "INSERT INTO usuarios(username, email, password_hash, rol, created_at) VALUES($1,$2,$3, COALESCE($4::rol_usuario, 'gestor'::rol_usuario), NOW()) RETURNING id, username, email, rol";
     const result = await db.query(text, [username, email, hashed, roleToPass]);
     const user = result.rows[0];
+    if (user) Object.assign(user, formatUser(user));
 
     // create a session for the newly registered user and log a 'register' activity
     try {
@@ -56,7 +63,8 @@ async function getAllUsers(req, res) {
   try {
     const text = "SELECT id, username, email, rol, created_at, last_login, is_active FROM usuarios ORDER BY username";
     const result = await db.query(text);
-    res.json(result.rows);
+    const rows = result.rows.map((r) => formatUser(r));
+    res.json(rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error fetching users" });
@@ -69,7 +77,8 @@ async function getUserById(req, res) {
     const text = "SELECT id, username, email, rol, created_at, last_login, is_active FROM usuarios WHERE id = $1";
     const result = await db.query(text, [id]);
     if (result.rowCount === 0) return res.status(404).json({ error: "User not found" });
-    res.json(result.rows[0]);
+    const row = result.rows[0];
+    res.json(formatUser(row));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error fetching user" });
@@ -93,7 +102,8 @@ async function updateUser(req, res) {
     const text = `UPDATE usuarios SET username = COALESCE($1, username), email = COALESCE($2, email), password_hash = COALESCE($3, password_hash), rol = COALESCE($4::rol_usuario, rol), is_active = COALESCE($5, is_active) WHERE id = $6 RETURNING id, username, email, rol, is_active`;
     const result = await db.query(text, [username, email, hashed, roleToPass, is_active, id]);
     if (result.rowCount === 0) return res.status(404).json({ error: "User not found" });
-    res.json(result.rows[0]);
+    const updated = result.rows[0];
+    res.json(formatUser(updated));
   } catch (err) {
     console.error(err);
     if (err.code === '23505') {
@@ -132,7 +142,8 @@ async function assignRoles(req, res) {
     const text = "UPDATE usuarios SET rol = $1::rol_usuario WHERE id = $2 RETURNING id, username, email, rol";
     const result = await db.query(text, [role, id]);
     if (result.rowCount === 0) return res.status(404).json({ error: "User not found" });
-    res.json(result.rows[0]);
+    const updated2 = result.rows[0];
+    res.json(formatUser(updated2));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error assigning role" });

@@ -68,7 +68,7 @@
       };
 
       try {
-        const response = await fetch('http://localhost:3000/api/users', {
+        const response = await fetch('/api/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -76,9 +76,10 @@
         const body = await response.json();
         if (!response.ok) throw new Error(body.error || 'Error al crear el usuario');
 
-        messageBox.textContent = `Usuario "${body.user.username}" creado correctamente.`;
+        messageBox.textContent = `Usuario "${body.user.username}" creado correctamente. Redirigiendo al login...`;
         messageBox.className = 'message success';
         form.reset();
+        setTimeout(() => { window.location.href = '/login'; }, 1400);
       } catch (err) {
         messageBox.textContent = err.message;
         messageBox.className = 'message error';

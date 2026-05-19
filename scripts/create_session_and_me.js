@@ -1,5 +1,6 @@
 const { createSession } = require('../src/utils/activity');
 const db = require('../src/db');
+const { mapDbRoleToApi } = require('../src/utils/roles');
 
 (async ()=>{
   try {
@@ -11,7 +12,12 @@ const db = require('../src/db');
     console.log('created session', session);
     const q = `SELECT s.id as session_id, s.token_sesion, s.usuario_id, u.username, u.email, u.rol FROM sesiones s JOIN usuarios u ON u.id = s.usuario_id WHERE s.token_sesion = $1 LIMIT 1`;
     const me = await db.query(q, [session.token_sesion]);
-    console.log('me lookup', JSON.stringify(me.rows[0], null, 2));
+    if (me.rowCount > 0) {
+      const row = { ...me.rows[0], rol: mapDbRoleToApi(me.rows[0].rol) };
+      console.log('me lookup', JSON.stringify(row, null, 2));
+    } else {
+      console.log('me lookup: no row');
+    }
   } catch (err) {
     console.error('Error', err.message || err);
     process.exit(2);

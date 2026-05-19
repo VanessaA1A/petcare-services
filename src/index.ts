@@ -1,13 +1,13 @@
-require('dotenv').config();
-const express = require('express');
-const path = require('path');
-const bodyParser = require('body-parser');
-const usersRouter = require('./routes/users');
-const authRouter = require('./routes/auth');
-const sessionAuth = require('./middleware/sessionAuth');
-const authController = require('./controllers/authController');
-const usersController = require('./controllers/usersController');
-const db = require('./db');
+import 'dotenv/config';
+import express from 'express';
+import path from 'path';
+import bodyParser from 'body-parser';
+import usersRouter from './routes/users';
+import authRouter from './routes/auth';
+import sessionAuth from './middleware/sessionAuth';
+import * as authController from './controllers/authController';
+import * as usersController from './controllers/usersController';
+import { query } from './db';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -30,13 +30,13 @@ app.use('/api/auth', authRouter);
 async function start() {
   try {
     console.log('Checking database connectivity...');
-    const r = await db.query('SELECT 1 as ok');
+    const r = await query('SELECT 1 as ok');
     if (!r || !r.rows) throw new Error('No response from DB');
     console.log('Database OK:', r.rows[0]);
     app.listen(port, () => {
       console.log(`PetCare services listening on port ${port}`);
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error('Failed to start application. DB connectivity error:', err.message || err);
     process.exit(1);
   }

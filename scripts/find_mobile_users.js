@@ -1,9 +1,11 @@
 const db = require('../src/db');
+const { mapDbRoleToApi } = require('../src/utils/roles');
 (async () => {
   try {
     const r = await db.query("SELECT id, username, email, rol, created_at FROM usuarios WHERE username LIKE 'mobile_%' ORDER BY id DESC LIMIT 20");
+    const rows = r.rows.map(rr => ({ ...rr, rol: mapDbRoleToApi(rr.rol) }));
     console.log('found', r.rowCount, 'rows');
-    console.log(JSON.stringify(r.rows, null, 2));
+    console.log(JSON.stringify(rows, null, 2));
 
     if (r.rowCount > 0) {
       const uid = r.rows[0].id;

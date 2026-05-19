@@ -2,22 +2,30 @@ const db = require('../db');
 const { hashPassword } = require('../utils/hash');
 const { createSession, logActivity } = require('../utils/activity');
 const { v4: uuidv4 } = require('uuid');
+const { mapDbRoleToApi } = require('../utils/roles');
+
+function formatUser(user) {
+  const role = mapDbRoleToApi(user.rol);
+  return { id: user.id, username: user.username, email: user.email, rol: role, role };
+}
 
 async function login(req, res) {
   try {
-    const { username, password } = req.body;
-    const hashed = hashPassword(password);
-    const text = 'SELECT id, username, email FROM usuarios WHERE username = $1 AND password_hash = $2';
-    const result = await db.query(text, [username, hashed]);
-    if (result.rowCount === 0) return res.status(401).json({ error: 'Invalid credentials' });
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'email and password required' });
+
+    const text = 'SELECT id, username, email, password_hash, rol FROM usuarios WHERE email = $1';
+    const result = await db.query(text, [email]);
+    if (result.rowCount === 0) return res.status(401).json({ error: 'Email not found' });
+
     const user = result.rows[0];
-    // create session (sesiones) using activity util
+    const hashed = hashPassword(password);
+    if (user.password_hash !== hashed) return res.status(401).json({ error: 'Invalid password' });
+
     const session = await createSession(user.id, { ipAddress: req.ip, userAgent: req.get('User-Agent') });
-    // log activity in actividades
-    await logActivity({ sesionId: session.id, usuarioId: user.id, tipoActividad: 'login', descripcion: JSON.stringify({ username }) , ipAddress: req.ip });
-    // update last_login on usuarios
+    await logActivity({ sesionId: session.id, usuarioId: user.id, tipoActividad: 'login', descripcion: JSON.stringify({ email }), ipAddress: req.ip });
     await db.query('UPDATE usuarios SET last_login = NOW() WHERE id = $1', [user.id]);
-    res.json({ user, session });
+    res.json({ user: formatUser(user), session });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Login error' });
