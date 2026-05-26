@@ -42,6 +42,7 @@ const path_1 = __importDefault(require("path"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const users_1 = __importDefault(require("./routes/users"));
 const auth_1 = __importDefault(require("./routes/auth"));
+const pets_1 = __importDefault(require("./routes/pets"));
 const sessionAuth_1 = __importDefault(require("./middleware/sessionAuth"));
 const authController = __importStar(require("./controllers/authController"));
 const usersController = __importStar(require("./controllers/usersController"));
@@ -59,6 +60,7 @@ app.get('/profile', sessionAuth_1.default, authController.me);
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 app.use('/api/users', users_1.default);
 app.use('/api/auth', auth_1.default);
+app.use('/api/pets', pets_1.default);
 async function start() {
     try {
         console.log('Checking database connectivity...');

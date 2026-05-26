@@ -4,6 +4,7 @@ import path from 'path';
 import bodyParser from 'body-parser';
 import usersRouter from './routes/users';
 import authRouter from './routes/auth';
+import petsRouter from './routes/pets';
 import sessionAuth from './middleware/sessionAuth';
 import * as authController from './controllers/authController';
 import * as usersController from './controllers/usersController';
@@ -26,6 +27,7 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 app.use('/api/users', usersRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/pets', petsRouter);
 
 async function start() {
   try {

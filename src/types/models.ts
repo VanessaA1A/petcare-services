@@ -23,3 +23,17 @@ export interface ActivityModel {
   ip_address?: string | null;
   fecha_hora?: string;
 }
+
+export interface PetModel {
+  id: string;
+  owner_id: number;
+  name: string;
+  species?: string | null;
+  breed: string;
+  size: string;
+  age?: number | null;
+  weight?: number | null;
+  description?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
