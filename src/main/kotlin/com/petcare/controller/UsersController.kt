@@ -16,7 +16,8 @@ import java.util.*
 class UsersController(
     private val userService: UserService,
     private val authService: AuthService,
-    private val activityService: ActivityService
+    private val activityService: ActivityService,
+    private val passwordEncoder: org.springframework.security.crypto.password.PasswordEncoder
 ) {
 
     @PostMapping
@@ -30,7 +31,7 @@ class UsersController(
             val u = User()
             u.username = username
             u.email = email
-            u.passwordHash = HashUtil.md5(password)
+            u.passwordHash = passwordEncoder.encode(password)
             u.rol = RoleUtil.normalizeRoleForDatabase(rol) ?: "gestor"
             val saved = userService.create(u)
             return try {
@@ -68,7 +69,7 @@ class UsersController(
             val u = uo.get()
             if (body.containsKey("username")) u.username = body["username"] as? String
             if (body.containsKey("email")) u.email = body["email"] as? String
-            if (body.containsKey("password")) u.passwordHash = HashUtil.md5(body["password"] as String)
+            if (body.containsKey("password")) u.passwordHash = passwordEncoder.encode(body["password"] as String)
             if (body.containsKey("rol")) u.rol = RoleUtil.normalizeRoleForDatabase(body["rol"] as? String) ?: u.rol
             if (body.containsKey("is_active")) u.isActive = body["is_active"] as? Boolean
             val saved = userService.save(u)

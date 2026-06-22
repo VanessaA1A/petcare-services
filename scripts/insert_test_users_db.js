@@ -21,7 +21,6 @@ async function insertUsers() {
         );
         inserted.push(res.rows[0]);
       } catch (err) {
-        // if conflict (duplicate), attempt to fetch existing row
         if (err.code === '23505') {
           const r = await db.query('SELECT id, username, email, rol, created_at FROM usuarios WHERE username = $1 OR email = $2 LIMIT 1', [u.username, u.email]);
           if (r.rowCount) inserted.push({ existing: true, ...r.rows[0] });
@@ -33,7 +32,6 @@ async function insertUsers() {
     }
 
     console.log(JSON.stringify(inserted, null, 2));
-    // also print a quick select of these users
     const names = users.map(u => u.username);
     const sel = await db.query('SELECT id, username, email, rol, created_at FROM usuarios WHERE username = ANY($1)', [names]);
     console.log('--- Confirm in DB ---');

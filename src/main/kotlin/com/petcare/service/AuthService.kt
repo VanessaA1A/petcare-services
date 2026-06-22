@@ -5,24 +5,47 @@ import com.petcare.model.User
 import com.petcare.repository.SessionRepository
 import com.petcare.repository.UserRepository
 import com.petcare.util.HashUtil
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import java.util.*
 
 @Service
-class AuthService(private val userRepository: UserRepository, private val sessionRepository: SessionRepository) {
+class AuthService(
+    private val userRepository: UserRepository,
+    private val sessionRepository: SessionRepository,
+    private val passwordEncoder: PasswordEncoder
+) {
 
     fun authenticate(email: String, password: String): Optional<User> {
-        val hashed = HashUtil.md5(password)
-        return userRepository.findByEmail(email).filter { it.passwordHash == hashed }
+        return userRepository.findByEmail(email).filter { user ->
+            if (user.passwordHash == null) {
+                false
+            } else if (passwordEncoder.matches(password, user.passwordHash)) {
+                true
+            } else {
+                val legacyMd5 = HashUtil.md5(password)
+                if (user.passwordHash.equals(legacyMd5, ignoreCase = true)) {
+                    user.passwordHash = passwordEncoder.encode(password)
+                    userRepository.save(user)
+                    true
+                } else {
+                    false
+                }
+            }
+        }
     }
 
-    fun createSession(userId: UUID, ip: String?, userAgent: String?): Session {
+    fun createSession(userId: UUID, tokenSesion: String, ip: String?, userAgent: String?): Session {
         val s = Session()
         s.usuarioId = userId
-        s.tokenSesion = UUID.randomUUID().toString()
+        s.tokenSesion = tokenSesion
         s.ipAddress = ip
         s.userAgent = userAgent
         return sessionRepository.save(s)
+    }
+
+    fun createSession(userId: UUID, ip: String?, userAgent: String?): Session {
+        return createSession(userId, UUID.randomUUID().toString(), ip, userAgent)
     }
 
     fun findSessionByToken(token: String) = sessionRepository.findActiveByTokenSesion(token)

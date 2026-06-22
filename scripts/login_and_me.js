@@ -33,8 +33,6 @@ function getMe(token) {
     const parsed = JSON.parse(login.body || '{}');
     const token = parsed.session && parsed.session.token_sesion;
     if (!token) { console.error('No token returned'); process.exit(2); }
-  // Instead of calling HTTP /api/auth/me (which may fail if server restarted),
-  // query DB directly to simulate sessionAuth lookup
   const db = require('../src/db');
   const { mapDbRoleToApi } = require('../src/utils/roles');
   const r = await db.query(`SELECT s.id as session_id, s.token_sesion, s.usuario_id, u.username, u.email, u.rol FROM sesiones s JOIN usuarios u ON u.id = s.usuario_id WHERE s.token_sesion = $1 LIMIT 1`, [token]);

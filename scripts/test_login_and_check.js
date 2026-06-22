@@ -22,7 +22,6 @@ function postLogin(username, password) {
     console.log('Login response status:', r.statusCode);
     console.log('Login response body:', r.body);
 
-    // Query sesiones and actividades to confirm
     const s = await db.query('SELECT id, usuario_id, token_sesion, fecha_inicio, fecha_fin, ip_address FROM sesiones WHERE usuario_id = (SELECT id FROM usuarios WHERE username = $1) ORDER BY id DESC LIMIT 5', ['test1']);
     console.log('Sesiones for test1:', JSON.stringify(s.rows, null, 2));
 

@@ -4,7 +4,6 @@ const { mapDbRoleToApi } = require('../src/utils/roles');
 
 (async ()=>{
   try {
-    // find test1 id
     const r = await db.query('SELECT id FROM usuarios WHERE username = $1 LIMIT 1', ['test1']);
     if (r.rowCount === 0) throw new Error('test1 not found');
     const id = r.rows[0].id;

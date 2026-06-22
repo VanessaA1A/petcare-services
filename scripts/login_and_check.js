@@ -26,7 +26,6 @@ function postLogin(username, password) {
     console.log('Login HTTP status:', r.statusCode);
     console.log('Login response body:', r.body);
 
-    // find usuario id
     const u = await db.query('SELECT id FROM usuarios WHERE username = $1', [USERNAME]);
     if (u.rowCount === 0) {
       console.error('User not found in DB:', USERNAME);
@@ -34,7 +33,6 @@ function postLogin(username, password) {
     }
     const usuarioId = u.rows[0].id;
 
-    // find latest session(s) for this usuario
     const ses = await db.query('SELECT id, token_sesion, fecha_inicio, fecha_fin FROM sesiones WHERE usuario_id = $1 ORDER BY fecha_inicio DESC LIMIT 5', [usuarioId]);
     console.log('Recent sesiones for user:', JSON.stringify(ses.rows, null, 2));
 
