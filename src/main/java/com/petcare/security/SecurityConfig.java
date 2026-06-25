@@ -32,17 +32,14 @@ public class SecurityConfig {
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and()
             .authorizeHttpRequests(authorize -> authorize
-                // Public endpoints
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/usuarios/{id}/foto").permitAll()
-                .requestMatchers("/static/**").permitAll()
-                // Profile endpoints (authenticated)
-                .requestMatchers("/api/usuarios/me/**").authenticated()
-                .requestMatchers("/api/usuarios/me").authenticated()
-                // Protected API endpoints
-                .requestMatchers("/api/**").authenticated()
-                // Allow all other requests
-                .anyRequest().permitAll()
+                    .requestMatchers("/api/auth/**").permitAll()
+                    .requestMatchers("/api/users").permitAll()
+                    .requestMatchers("/api/usuarios/{id}/foto").permitAll()
+                    .requestMatchers("/static/**").permitAll()
+                    .requestMatchers("/api/usuarios/me/**").authenticated()
+                    .requestMatchers("/api/usuarios/me").authenticated()
+                    .requestMatchers("/api/**").authenticated()
+                    .anyRequest().permitAll()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
