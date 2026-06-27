@@ -6,6 +6,7 @@ import com.petcare.security.JwtTokenService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -40,5 +41,14 @@ public class AuthService {
         user.setRol(rol);
         user.setIsActive(true);
         return usuarioRepository.save(user);
+    }
+
+    public Optional<String> recoverPassword(String email) {
+        return usuarioRepository.findByEmail(email).map(user -> {
+            user.setResetToken(UUID.randomUUID().toString());
+            user.setResetTokenExpires(OffsetDateTime.now().plusHours(1));
+            usuarioRepository.save(user);
+            return user.getResetToken();
+        });
     }
 }

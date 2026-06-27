@@ -57,6 +57,16 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    record RecoverRequest(@NotBlank String email) {}
+
+    @PostMapping("/recover")
+    public ResponseEntity<?> recover(@RequestBody @Valid RecoverRequest request) {
+        Optional<String> token = authService.recoverPassword(request.email());
+        return token
+            .<ResponseEntity<?>>map(value -> ResponseEntity.ok(Map.of("message", "Recovery token created", "token", value)))
+            .orElseGet(() -> ResponseEntity.status(404).body(Map.of("error", "Email not found")));
+    }
+
     @GetMapping("/me")
     public ResponseEntity<?> me() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -87,11 +97,11 @@ public class AuthController {
         }
 
         String token = authHeader.substring("Bearer ".length()).trim();
-        boolean invalidated = sessionService.invalidateSession(token);
-        if (!invalidated) {
+        Optional<UUID> invalidated = sessionService.invalidateSession(token);
+        if (invalidated.isEmpty()) {
             return ResponseEntity.status(404).body(Map.of("error", "Active session not found"));
         }
-        return ResponseEntity.ok(Map.of("message", "Session closed successfully"));
+        return ResponseEntity.ok(Map.of("message", "Session closed successfully", "sessionId", invalidated.get()));
     }
 }
 

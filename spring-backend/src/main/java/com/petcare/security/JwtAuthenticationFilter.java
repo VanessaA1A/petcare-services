@@ -45,7 +45,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     session -> {
                         JwtAuthenticatedUser principal = new JwtAuthenticatedUser(userId, username, email, rol, authorities);
                         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(principal, token, authorities);
-                        auth.setDetails(session);
+                        auth.setDetails(new SessionDto(session.getId(), session.getTokenSesion(), session.getFechaInicio()));
                         SecurityContextHolder.getContext().setAuthentication(auth);
                     },
                     SecurityContextHolder::clearContext

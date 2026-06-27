@@ -29,25 +29,24 @@ public class SessionService {
         session.setUserAgent(userAgent);
         session.setLogoutExplicito(false);
         Sesion saved = sesionRepository.save(session);
-        return new SessionDto(saved.getId(), saved.getTokenSesion());
+        return new SessionDto(saved.getId(), saved.getTokenSesion(), saved.getFechaInicio());
     }
 
     public Optional<SessionDto> findActiveSessionDto(String token) {
-        return findActiveSessionByToken(token).map(sesion -> new SessionDto(sesion.getId(), sesion.getTokenSesion()));
+        return findActiveSessionByToken(token).map(sesion -> new SessionDto(sesion.getId(), sesion.getTokenSesion(), sesion.getFechaInicio()));
+    }
+
+    public Optional<UUID> invalidateSession(String token) {
+        return findActiveSessionByToken(token).map(sesion -> {
+            sesion.setFechaFin(OffsetDateTime.now());
+            sesion.setLogoutExplicito(true);
+            sesionRepository.save(sesion);
+            return sesion.getId();
+        });
     }
 
     public Optional<Sesion> findActiveSessionByToken(String token) {
         return sesionRepository.findByTokenSesion(token)
             .filter(sesion -> sesion.getFechaFin() == null || Boolean.FALSE.equals(sesion.getLogoutExplicito()));
-    }
-
-    @Transactional
-    public boolean invalidateSession(String token) {
-        return findActiveSessionByToken(token).map(sesion -> {
-            sesion.setFechaFin(OffsetDateTime.now());
-            sesion.setLogoutExplicito(true);
-            sesionRepository.save(sesion);
-            return true;
-        }).orElse(false);
     }
 }

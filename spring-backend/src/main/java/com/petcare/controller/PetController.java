@@ -1,5 +1,6 @@
 package com.petcare.controller;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.petcare.dto.PetDto;
 import com.petcare.service.PetService;
 import jakarta.validation.Valid;
@@ -41,10 +42,15 @@ public class PetController {
         return ResponseEntity.created(URI.create("/api/pets/" + created.getId())).body(created);
     }
 
+    public record BulkPetRequest(@JsonProperty("owner_id") UUID ownerId, List<PetDto> pets) {}
+
     @PostMapping("/bulk")
-    public ResponseEntity<List<PetDto>> createPets(@RequestBody @Valid List<PetDto> pets) {
-        List<PetDto> created = pets.stream().map(petService::create).toList();
-        return ResponseEntity.ok(created);
+    public ResponseEntity<List<PetDto>> createPets(@RequestBody @Valid BulkPetRequest request) {
+        List<PetDto> created = request.pets().stream().map(pet -> {
+            pet.setOwnerId(request.ownerId());
+            return petService.create(pet);
+        }).toList();
+        return ResponseEntity.status(201).body(created);
     }
 
     @PutMapping("/{id}")
