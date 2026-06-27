@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { v4 as uuidv4 } from "uuid";
 import { loginUser } from "../services/authService";
 import { ApiRole, mapDbRoleToApi } from "../utils/roles";
 import { query } from "../db";
@@ -84,4 +85,34 @@ export async function recoverPassword(req: Request, res: Response) {
 export async function me(req: Request, res: Response) {
   if (!req.user) return res.status(401).json({ error: "Not authenticated" });
   res.json({ user: req.user, session: req.session });
+}
+
+export async function logout(req: Request, res: Response) {
+  try {
+    const auth = req.get("Authorization") || req.get("authorization");
+    if (!auth || !auth.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Missing Authorization header" });
+    }
+
+    const token = auth.slice("Bearer ".length).trim();
+    const text = `
+      UPDATE sesiones
+      SET fecha_fin = NOW(), logout_explicito = true
+      WHERE token_sesion = $1 AND (fecha_fin IS NULL OR logout_explicito = false)
+      RETURNING id, token_sesion
+    `;
+    const result = await query(text, [token]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Active session not found" });
+    }
+
+    res.json({
+      message: "Session closed successfully",
+      sessionId: result.rows[0].id,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Logout error" });
+  }
 }

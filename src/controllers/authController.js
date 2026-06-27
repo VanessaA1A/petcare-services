@@ -1,5 +1,7 @@
+const db = require("../db");
 const { loginUser } = require("../services/authService");
 const { mapDbRoleToApi } = require("../utils/roles");
+const { v4: uuidv4 } = require("uuid");
 
 function formatUser(user) {
   const role = mapDbRoleToApi(user.rol);
@@ -63,4 +65,34 @@ async function me(req, res) {
   res.json({ user: req.user, session: req.session });
 }
 
-module.exports = { login, recoverPassword, me };
+async function logout(req, res) {
+  try {
+    const auth = req.get("Authorization") || req.get("authorization");
+    if (!auth || !auth.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Missing Authorization header" });
+    }
+
+    const token = auth.slice("Bearer ".length).trim();
+    const text = `
+      UPDATE sesiones
+      SET fecha_fin = NOW(), logout_explicito = true
+      WHERE token_sesion = $1 AND (fecha_fin IS NULL OR logout_explicito = false)
+      RETURNING id, token_sesion
+    `;
+    const result = await db.query(text, [token]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Active session not found" });
+    }
+
+    res.json({
+      message: "Session closed successfully",
+      sessionId: result.rows[0].id,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Logout error" });
+  }
+}
+
+module.exports = { login, recoverPassword, me, logout };
