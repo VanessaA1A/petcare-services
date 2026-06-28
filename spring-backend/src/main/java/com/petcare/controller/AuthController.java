@@ -9,6 +9,7 @@ import com.petcare.service.SessionService;
 import com.petcare.service.UsuarioService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -32,27 +33,36 @@ public class AuthController {
         this.usuarioService = usuarioService;
     }
 
-    record LoginRequest(@NotBlank String username, @NotBlank String password) {}
+    // 🔥 CORREGIDO: LoginRequest con email en lugar de username
+    record LoginRequest(
+            @NotBlank(message = "El email es obligatorio")
+            @Email(message = "Formato de email inválido")
+            String email,  // 🔥 CAMBIADO: username → email
+
+            @NotBlank(message = "La contraseña es obligatoria")
+            String password
+    ) {}
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody @Valid LoginRequest request, HttpServletRequest servletRequest) {
-        Optional<String> token = authService.login(request.username(), request.password());
+        Optional<String> token = authService.login(request.email(), request.password());
         if (token.isEmpty()) {
-            return ResponseEntity.status(401).body(Map.of("error", "Invalid username or password"));
+            return ResponseEntity.status(401).body(Map.of("error", "Credenciales incorrectas"));
         }
 
-        Usuario user = authService.findByUsername(request.username()).orElseThrow();
+        Usuario user = (Usuario) authService.findByEmail(request.email()).orElseThrow();
         SessionDto session = sessionService.createSession(
-            user.getId(),
-            token.get(),
-            servletRequest.getRemoteAddr(),
-            servletRequest.getHeader("User-Agent")
+                user.getId(),
+                token.get(),
+                servletRequest.getRemoteAddr(),
+                servletRequest.getHeader("User-Agent")
         );
 
         UsuarioDto dto = usuarioService.toDto(user);
         Map<String, Object> response = new HashMap<>();
         response.put("user", dto);
         response.put("session", session);
+        response.put("token", token.get());  // 🔥 AÑADIDO: token en la respuesta
         return ResponseEntity.ok(response);
     }
 
@@ -62,8 +72,8 @@ public class AuthController {
     public ResponseEntity<?> recover(@RequestBody @Valid RecoverRequest request) {
         Optional<String> token = authService.recoverPassword(request.email());
         return token
-            .<ResponseEntity<?>>map(value -> ResponseEntity.ok(Map.of("message", "Recovery token created", "token", value)))
-            .orElseGet(() -> ResponseEntity.status(404).body(Map.of("error", "Email not found")));
+                .<ResponseEntity<?>>map(value -> ResponseEntity.ok(Map.of("message", "Recovery token created", "token", value)))
+                .orElseGet(() -> ResponseEntity.status(404).body(Map.of("error", "Email not found")));
     }
 
     @GetMapping("/me")
@@ -103,4 +113,3 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "Session closed successfully", "sessionId", invalidated.get()));
     }
 }
-

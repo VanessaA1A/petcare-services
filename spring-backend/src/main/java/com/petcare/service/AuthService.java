@@ -4,6 +4,8 @@ import com.petcare.model.RolUsuario;
 import com.petcare.model.Usuario;
 import com.petcare.repository.UsuarioRepository;
 import com.petcare.security.JwtTokenService;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -27,10 +29,15 @@ public class AuthService {
         return usuarioRepository.findByUsername(username);
     }
 
-    public Optional<String> login(String username, String password) {
-        return usuarioRepository.findByUsername(username)
-            .filter(user -> passwordEncoder.matches(password, user.getPasswordHash()))
-            .map(user -> jwtTokenService.createToken(user.getId(), user.getUsername(), user.getEmail(), user.getRol() != null ? user.getRol().toString() : null));
+    public Optional<String> login(String email, String password) {
+        return usuarioRepository.findByEmail(email)
+                .filter(user -> passwordEncoder.matches(password, user.getPasswordHash()))
+                .map(user -> jwtTokenService.createToken(
+                        user.getId(),
+                        user.getUsername(),
+                        user.getEmail(),
+                        user.getRol() != null ? user.getRol().toString() : null
+                ));
     }
 
     public Usuario createUser(String username, String email, String password, String rol) {
@@ -61,5 +68,9 @@ public class AuthService {
             usuarioRepository.save(user);
             return user.getResetToken();
         });
+    }
+
+    public Optional<Usuario> findByEmail(String email) {
+        return usuarioRepository.findByEmail(email);
     }
 }
