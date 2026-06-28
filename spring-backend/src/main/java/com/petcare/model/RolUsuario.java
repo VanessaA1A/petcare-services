@@ -4,10 +4,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum RolUsuario {
-    gestor,
-    cliente,
-    OWNER,
-    CAREGIVER;
+    administrador,
+    propietario,
+    gestor;
 
     @JsonCreator
     public static RolUsuario from(String value) {

@@ -1,4 +1,4 @@
-CREATE TYPE IF NOT EXISTS rol_usuario AS ENUM ('gestor', 'cliente', 'OWNER', 'CAREGIVER');
+CREATE TYPE IF NOT EXISTS rol_usuario AS ENUM ('administrador', 'propietario', 'gestor');
 
 CREATE TABLE IF NOT EXISTS usuarios (
   id serial PRIMARY KEY,
