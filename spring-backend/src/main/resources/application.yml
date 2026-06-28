@@ -17,6 +17,11 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+security:
+  jwt:
+    secret: ${JWT_SECRET:petcare-development-secret-key-change-me-in-production}
+    expiration-ms: ${JWT_EXPIRATION_MS:3600000}
+
 logging:
   level:
     root: INFO
