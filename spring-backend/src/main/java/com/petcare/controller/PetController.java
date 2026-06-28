@@ -26,12 +26,12 @@ public class PetController {
     }
 
     @GetMapping("/owner/{ownerId}")
-    public List<PetDto> getPetsByOwner(@PathVariable("ownerId") UUID ownerId) {
+    public List<PetDto> getPetsByOwner(@PathVariable("ownerId") Integer ownerId) {
         return petService.findByOwnerId(ownerId);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PetDto> getPetById(@PathVariable("id") UUID id) {
+    public ResponseEntity<PetDto> getPetById(@PathVariable("id") Integer id) {
         PetDto pet = petService.findById(id);
         return pet != null ? ResponseEntity.ok(pet) : ResponseEntity.notFound().build();
     }
@@ -42,7 +42,7 @@ public class PetController {
         return ResponseEntity.created(URI.create("/api/pets/" + created.getId())).body(created);
     }
 
-    public record BulkPetRequest(@JsonProperty("owner_id") UUID ownerId, List<PetDto> pets) {}
+    public record BulkPetRequest(@JsonProperty("owner_id") Integer ownerId, List<PetDto> pets) {}
 
     @PostMapping("/bulk")
     public ResponseEntity<List<PetDto>> createPets(@RequestBody @Valid BulkPetRequest request) {
@@ -54,13 +54,13 @@ public class PetController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PetDto> updatePet(@PathVariable("id") UUID id, @RequestBody @Valid PetDto petDto) {
+    public ResponseEntity<PetDto> updatePet(@PathVariable("id") Integer id, @RequestBody @Valid PetDto petDto) {
         PetDto updated = petService.update(id, petDto);
         return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePet(@PathVariable("id") UUID id) {
+    public ResponseEntity<Void> deletePet(@PathVariable("id") Integer id) {
         return petService.delete(id) ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 }

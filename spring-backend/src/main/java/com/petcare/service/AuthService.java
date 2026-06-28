@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -34,11 +33,10 @@ public class AuthService {
 
     public Usuario createUser(String username, String email, String password, String rol) {
         Usuario user = new Usuario();
-        user.setId(UUID.randomUUID());
         user.setUsername(username);
         user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(password));
-        user.setRol(rol);
+        user.setRol(rol == null || rol.isBlank() ? "gestor" : rol);
         user.setIsActive(true);
         return usuarioRepository.save(user);
     }

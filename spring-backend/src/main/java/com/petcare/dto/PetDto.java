@@ -4,13 +4,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 public class PetDto {
-    private UUID id;
+    private Integer id;
 
     @JsonProperty("owner_id")
-    private UUID ownerId;
+    private Integer ownerId;
 
     private String name;
     private String species;
@@ -26,11 +25,11 @@ public class PetDto {
     @JsonProperty("updated_at")
     private OffsetDateTime updatedAt;
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
 
-    public UUID getOwnerId() { return ownerId; }
-    public void setOwnerId(UUID ownerId) { this.ownerId = ownerId; }
+    public Integer getOwnerId() { return ownerId; }
+    public void setOwnerId(Integer ownerId) { this.ownerId = ownerId; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }

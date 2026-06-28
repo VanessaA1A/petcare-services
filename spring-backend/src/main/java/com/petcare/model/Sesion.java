@@ -2,20 +2,21 @@ package com.petcare.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "sesiones")
 public class Sesion {
     @Id
-    @Column(columnDefinition = "uuid")
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
 
     @Column(name = "usuario_id")
-    private UUID usuarioId;
+    private Integer usuarioId;
 
     @Column(name = "token_sesion")
     private String tokenSesion;
@@ -36,11 +37,11 @@ public class Sesion {
     private Boolean logoutExplicito;
 
     // getters/setters
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
 
-    public UUID getUsuarioId() { return usuarioId; }
-    public void setUsuarioId(UUID usuarioId) { this.usuarioId = usuarioId; }
+    public Integer getUsuarioId() { return usuarioId; }
+    public void setUsuarioId(Integer usuarioId) { this.usuarioId = usuarioId; }
 
     public String getTokenSesion() { return tokenSesion; }
     public void setTokenSesion(String tokenSesion) { this.tokenSesion = tokenSesion; }

@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,23 +21,22 @@ public class PetService {
         return petRepository.findAll().stream().map(this::toDto).collect(Collectors.toList());
     }
 
-    public PetDto findById(UUID id) {
+    public PetDto findById(Integer id) {
         return petRepository.findById(id).map(this::toDto).orElse(null);
     }
 
-    public List<PetDto> findByOwnerId(UUID ownerId) {
+    public List<PetDto> findByOwnerId(Integer ownerId) {
         return petRepository.findByOwnerId(ownerId).stream().map(this::toDto).collect(Collectors.toList());
     }
 
     public PetDto create(PetDto dto) {
         Pet pet = toEntity(dto);
-        if (pet.getId() == null) pet.setId(UUID.randomUUID());
         pet.setCreatedAt(OffsetDateTime.now());
         pet.setUpdatedAt(OffsetDateTime.now());
         return toDto(petRepository.save(pet));
     }
 
-    public PetDto update(UUID id, PetDto dto) {
+    public PetDto update(Integer id, PetDto dto) {
         return petRepository.findById(id).map(existing -> {
             if (dto.getName() != null) existing.setName(dto.getName());
             if (dto.getSpecies() != null) existing.setSpecies(dto.getSpecies());
@@ -52,7 +50,7 @@ public class PetService {
         }).orElse(null);
     }
 
-    public boolean delete(UUID id) {
+    public boolean delete(Integer id) {
         if (!petRepository.existsById(id)) return false;
         petRepository.deleteById(id);
         return true;

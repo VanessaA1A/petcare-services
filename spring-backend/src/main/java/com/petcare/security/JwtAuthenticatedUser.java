@@ -4,16 +4,15 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.UUID;
 
 public class JwtAuthenticatedUser implements UserDetails {
-    private final UUID userId;
+    private final Integer userId;
     private final String username;
     private final String email;
     private final String rol;
     private final Collection<? extends GrantedAuthority> authorities;
 
-    public JwtAuthenticatedUser(UUID userId, String username, String email, String rol, Collection<? extends GrantedAuthority> authorities) {
+    public JwtAuthenticatedUser(Integer userId, String username, String email, String rol, Collection<? extends GrantedAuthority> authorities) {
         this.userId = userId;
         this.username = username;
         this.email = email;
@@ -21,7 +20,7 @@ public class JwtAuthenticatedUser implements UserDetails {
         this.authorities = authorities;
     }
 
-    public UUID getUserId() { return userId; }
+    public Integer getUserId() { return userId; }
 
     public String getEmail() { return email; }
 

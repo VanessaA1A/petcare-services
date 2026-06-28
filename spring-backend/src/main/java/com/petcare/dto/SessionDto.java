@@ -3,27 +3,26 @@ package com.petcare.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 public class SessionDto {
-    private UUID id;
+    private Integer id;
     private String token;
     private OffsetDateTime fechaInicio;
 
     public SessionDto() {
     }
 
-    public SessionDto(UUID id, String token, OffsetDateTime fechaInicio) {
+    public SessionDto(Integer id, String token, OffsetDateTime fechaInicio) {
         this.id = id;
         this.token = token;
         this.fechaInicio = fechaInicio;
     }
 
-    public UUID getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(UUID id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

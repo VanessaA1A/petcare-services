@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
-import java.util.UUID;
 
 @Service
 public class JwtTokenService {
@@ -23,7 +22,7 @@ public class JwtTokenService {
         return Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
     }
 
-    public String createToken(UUID userId, String username, String email, String rol) {
+    public String createToken(Integer userId, String username, String email, String rol) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + jwtProperties.getExpirationMs());
 

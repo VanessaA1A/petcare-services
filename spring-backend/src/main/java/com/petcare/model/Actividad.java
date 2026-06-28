@@ -1,21 +1,25 @@
 package com.petcare.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "actividades")
 public class Actividad {
     @Id
-    @Column(columnDefinition = "uuid")
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
 
     @Column(name = "sesion_id")
-    private UUID sesionId;
+    private Integer sesionId;
 
     @Column(name = "usuario_id")
-    private UUID usuarioId;
+    private Integer usuarioId;
 
     @Column(name = "tipo_actividad")
     private String tipoActividad;
@@ -29,14 +33,14 @@ public class Actividad {
     private OffsetDateTime fechaHora;
 
     // getters/setters
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
 
-    public UUID getSesionId() { return sesionId; }
-    public void setSesionId(UUID sesionId) { this.sesionId = sesionId; }
+    public Integer getSesionId() { return sesionId; }
+    public void setSesionId(Integer sesionId) { this.sesionId = sesionId; }
 
-    public UUID getUsuarioId() { return usuarioId; }
-    public void setUsuarioId(UUID usuarioId) { this.usuarioId = usuarioId; }
+    public Integer getUsuarioId() { return usuarioId; }
+    public void setUsuarioId(Integer usuarioId) { this.usuarioId = usuarioId; }
 
     public String getTipoActividad() { return tipoActividad; }
     public void setTipoActividad(String tipoActividad) { this.tipoActividad = tipoActividad; }

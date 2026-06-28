@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class SessionService {
@@ -19,9 +18,8 @@ public class SessionService {
     }
 
     @Transactional
-    public SessionDto createSession(UUID userId, String token, String ipAddress, String userAgent) {
+    public SessionDto createSession(Integer userId, String token, String ipAddress, String userAgent) {
         Sesion session = new Sesion();
-        session.setId(UUID.randomUUID());
         session.setUsuarioId(userId);
         session.setTokenSesion(token);
         session.setFechaInicio(OffsetDateTime.now());
@@ -36,7 +34,7 @@ public class SessionService {
         return findActiveSessionByToken(token).map(sesion -> new SessionDto(sesion.getId(), sesion.getTokenSesion(), sesion.getFechaInicio()));
     }
 
-    public Optional<UUID> invalidateSession(String token) {
+    public Optional<Integer> invalidateSession(String token) {
         return findActiveSessionByToken(token).map(sesion -> {
             sesion.setFechaFin(OffsetDateTime.now());
             sesion.setLogoutExplicito(true);

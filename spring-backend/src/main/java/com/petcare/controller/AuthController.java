@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -97,7 +96,7 @@ public class AuthController {
         }
 
         String token = authHeader.substring("Bearer ".length()).trim();
-        Optional<UUID> invalidated = sessionService.invalidateSession(token);
+        Optional<Integer> invalidated = sessionService.invalidateSession(token);
         if (invalidated.isEmpty()) {
             return ResponseEntity.status(404).body(Map.of("error", "Active session not found"));
         }
