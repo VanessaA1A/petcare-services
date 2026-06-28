@@ -1,7 +1,5 @@
 package com.petcare.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public class UsuarioDto {
     private Integer id;
     private String username;
@@ -19,7 +17,4 @@ public class UsuarioDto {
 
     public String getRol() { return rol; }
     public void setRol(String rol) { this.rol = rol; }
-
-    @JsonProperty("role")
-    public String getRole() { return rol; }
 }
