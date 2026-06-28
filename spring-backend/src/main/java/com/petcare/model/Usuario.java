@@ -7,6 +7,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "usuarios")
@@ -22,7 +24,9 @@ public class Usuario {
     @Column(name = "password_hash")
     private String passwordHash;
 
-    private String rol;
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "rol", columnDefinition = "rol_usuario")
+    private RolUsuario rol;
 
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
@@ -52,8 +56,8 @@ public class Usuario {
     public String getPasswordHash() { return passwordHash; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
 
-    public String getRol() { return rol; }
-    public void setRol(String rol) { this.rol = rol; }
+    public RolUsuario getRol() { return rol; }
+    public void setRol(RolUsuario rol) { this.rol = rol; }
 
     public OffsetDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }

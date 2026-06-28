@@ -1,6 +1,7 @@
 package com.petcare.service;
 
 import com.petcare.dto.UsuarioDto;
+import com.petcare.model.RolUsuario;
 import com.petcare.model.Usuario;
 import com.petcare.repository.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,7 +35,7 @@ public class UsuarioService {
             if (password != null && !password.isBlank()) {
                 user.setPasswordHash(passwordEncoder.encode(password));
             }
-            if (rol != null) user.setRol(rol);
+            if (rol != null) user.setRol(RolUsuario.from(rol));
             if (isActive != null) user.setIsActive(isActive);
             return usuarioRepository.save(user);
         });
@@ -50,7 +51,7 @@ public class UsuarioService {
 
     public Optional<Usuario> assignRole(Integer id, String role) {
         return usuarioRepository.findById(id).map(user -> {
-            user.setRol(role);
+            user.setRol(RolUsuario.from(role));
             return usuarioRepository.save(user);
         });
     }
@@ -68,7 +69,7 @@ public class UsuarioService {
         d.setId(u.getId());
         d.setEmail(u.getEmail());
         d.setUsername(u.getUsername());
-        d.setRol(u.getRol());
+        d.setRol(u.getRol() != null ? u.getRol().toString() : null);
         return d;
     }
 }

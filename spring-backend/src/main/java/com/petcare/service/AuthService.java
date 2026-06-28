@@ -1,5 +1,6 @@
 package com.petcare.service;
 
+import com.petcare.model.RolUsuario;
 import com.petcare.model.Usuario;
 import com.petcare.repository.UsuarioRepository;
 import com.petcare.security.JwtTokenService;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -28,7 +30,7 @@ public class AuthService {
     public Optional<String> login(String username, String password) {
         return usuarioRepository.findByUsername(username)
             .filter(user -> passwordEncoder.matches(password, user.getPasswordHash()))
-            .map(user -> jwtTokenService.createToken(user.getId(), user.getUsername(), user.getEmail(), user.getRol()));
+            .map(user -> jwtTokenService.createToken(user.getId(), user.getUsername(), user.getEmail(), user.getRol() != null ? user.getRol().toString() : null));
     }
 
     public Usuario createUser(String username, String email, String password, String rol) {
@@ -36,9 +38,20 @@ public class AuthService {
         user.setUsername(username);
         user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(password));
-        user.setRol(rol == null || rol.isBlank() ? "gestor" : rol);
+        user.setRol(parseRole(rol));
         user.setIsActive(true);
         return usuarioRepository.save(user);
+    }
+
+    private RolUsuario parseRole(String rol) {
+        if (rol == null || rol.isBlank()) {
+            return RolUsuario.gestor;
+        }
+        try {
+            return RolUsuario.from(rol);
+        } catch (IllegalArgumentException ex) {
+            return RolUsuario.gestor;
+        }
     }
 
     public Optional<String> recoverPassword(String email) {
