@@ -6,6 +6,7 @@ import com.petcare.service.AuthService;
 import com.petcare.service.UsuarioService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +27,12 @@ public class UsuarioController {
         this.authService = authService;
     }
 
-    record CreateUserRequest(@NotBlank String username, @NotBlank String email, @NotBlank String password, String rol) {}
+    record CreateUserRequest(
+        @NotBlank String username,
+        @NotBlank String email,
+        @NotBlank @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres") String password,
+        String rol
+    ) {}
 
     @PostMapping
     public ResponseEntity<?> createUser(@RequestBody @Valid CreateUserRequest request) {
