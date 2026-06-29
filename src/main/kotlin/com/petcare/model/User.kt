@@ -4,15 +4,16 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.petcare.util.RoleUtil
 import jakarta.persistence.*
+import org.hibernate.annotations.ColumnTransformer
 import java.time.OffsetDateTime
-import java.util.*
 
 @Entity
 @Table(name = "usuarios")
 class User {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @JvmField
-    var id: UUID? = null
+    var id: Int? = null
 
     @Column(unique = true, nullable = false)
     @JvmField
@@ -23,12 +24,15 @@ class User {
     var email: String? = null
 
     @get:JsonIgnore
+    @field:JsonIgnore
     @Column(name = "password_hash", nullable = false)
     @JvmField
     var passwordHash: String? = null
 
     @get:JsonIgnore
-    @Column(name = "rol")
+    @field:JsonIgnore
+    @Column(name = "rol", columnDefinition = "rol_usuario")
+    @ColumnTransformer(write = "?::rol_usuario")
     @JvmField
     var rol: String? = null
 
@@ -45,6 +49,7 @@ class User {
     var telefono: String? = null
 
     @get:JsonIgnore
+    @field:JsonIgnore
     @Column(name = "foto_perfil_filename")
     @JvmField
     var fotoPerfilFilename: String? = null
@@ -74,18 +79,19 @@ class User {
     var isActive: Boolean? = true
 
     @get:JsonIgnore
+    @field:JsonIgnore
     @Column(name = "reset_token")
     @JvmField
     var resetToken: String? = null
 
     @get:JsonIgnore
+    @field:JsonIgnore
     @Column(name = "reset_token_expires")
     @JvmField
     var resetTokenExpires: OffsetDateTime? = null
 
     @PrePersist
     fun prePersist() {
-        if (id == null) id = UUID.randomUUID()
         if (createdAt == null) createdAt = OffsetDateTime.now()
         if (isActive == null) isActive = true
     }

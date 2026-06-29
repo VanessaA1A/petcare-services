@@ -7,7 +7,8 @@ import com.petcare.repository.UserRepository
 import com.petcare.util.HashUtil
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
-import java.util.*
+import java.util.Optional
+import java.util.UUID
 
 @Service
 class AuthService(
@@ -17,14 +18,13 @@ class AuthService(
 ) {
 
     fun authenticate(email: String, password: String): Optional<User> {
-        return userRepository.findByEmail(email).filter { user ->
-            if (user.passwordHash == null) {
-                false
-            } else if (passwordEncoder.matches(password, user.passwordHash)) {
+        return userRepository.findByEmail(email.trim()).filter { user ->
+            val hash = user.passwordHash ?: return@filter false
+            if (hash.startsWith("$2") && hash.length >= 59 && passwordEncoder.matches(password, hash)) {
                 true
             } else {
                 val legacyMd5 = HashUtil.md5(password)
-                if (user.passwordHash.equals(legacyMd5, ignoreCase = true)) {
+                if (hash.equals(legacyMd5, ignoreCase = true)) {
                     user.passwordHash = passwordEncoder.encode(password)
                     userRepository.save(user)
                     true
@@ -35,7 +35,7 @@ class AuthService(
         }
     }
 
-    fun createSession(userId: UUID, tokenSesion: String, ip: String?, userAgent: String?): Session {
+    fun createSession(userId: Int, tokenSesion: String, ip: String?, userAgent: String?): Session {
         val s = Session()
         s.usuarioId = userId
         s.tokenSesion = tokenSesion
@@ -44,7 +44,7 @@ class AuthService(
         return sessionRepository.save(s)
     }
 
-    fun createSession(userId: UUID, ip: String?, userAgent: String?): Session {
+    fun createSession(userId: Int, ip: String?, userAgent: String?): Session {
         return createSession(userId, UUID.randomUUID().toString(), ip, userAgent)
     }
 

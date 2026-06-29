@@ -1,10 +1,9 @@
 package com.petcare.dto
 
 import com.petcare.model.Session
-import java.util.UUID
 
 data class AuthSessionDTO(
-    val id: UUID,
+    val id: Int,
     val tokenSesion: String
 ) {
     companion object {

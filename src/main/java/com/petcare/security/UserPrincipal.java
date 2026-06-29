@@ -4,23 +4,22 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.UUID;
 
 public class UserPrincipal implements UserDetails {
 
-    private final UUID id;
+    private final Integer id;
     private final String username;
     private final String email;
     private final Collection<? extends GrantedAuthority> authorities;
 
-    public UserPrincipal(UUID id, String username, String email, Collection<? extends GrantedAuthority> authorities) {
+    public UserPrincipal(Integer id, String username, String email, Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
         this.username = username;
         this.email = email;
         this.authorities = authorities;
     }
 
-    public UUID getId() {
+    public Integer getId() {
         return id;
     }
 

@@ -2,16 +2,16 @@ package com.petcare.model
 
 import jakarta.persistence.*
 import java.time.OffsetDateTime
-import java.util.*
 
 @Entity
 @Table(name = "sesiones")
 data class Session(
     @Id
-    var id: UUID? = null,
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Int? = null,
 
     @Column(name = "usuario_id", nullable = false)
-    var usuarioId: UUID? = null,
+    var usuarioId: Int? = null,
 
     @Column(name = "token_sesion", nullable = false, unique = true)
     var tokenSesion: String? = null,
@@ -33,7 +33,6 @@ data class Session(
 ) {
     @PrePersist
     fun prePersist() {
-        if (id == null) id = UUID.randomUUID()
         if (fechaInicio == null) fechaInicio = OffsetDateTime.now()
         if (logoutExplicito == null) logoutExplicito = false
     }

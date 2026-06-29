@@ -2,16 +2,16 @@ package com.petcare.model
 
 import jakarta.persistence.*
 import java.time.OffsetDateTime
-import java.util.*
 
 @Entity
 @Table(name = "pets")
 data class Pet(
     @Id
-    var id: UUID? = null,
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Int? = null,
 
     @Column(name = "owner_id", nullable = false)
-    var ownerId: UUID? = null,
+    var ownerId: Int? = null,
 
     @Column(nullable = false)
     var name: String? = null,
@@ -31,7 +31,6 @@ data class Pet(
 ) {
     @PrePersist
     fun prePersist() {
-        if (id == null) id = UUID.randomUUID()
         if (createdAt == null) createdAt = OffsetDateTime.now()
         if (updatedAt == null) updatedAt = OffsetDateTime.now()
     }

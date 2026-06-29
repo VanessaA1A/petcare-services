@@ -18,7 +18,7 @@ data class AuthResponseDTO(
 }
 
 data class UserInfoDTO(
-    val id: String,
+    val id: Int,
     val username: String,
     val email: String,
     val rol: String?
@@ -26,7 +26,7 @@ data class UserInfoDTO(
     companion object {
         fun fromUser(user: User): UserInfoDTO {
             return UserInfoDTO(
-                id = user.id.toString(),
+                id = user.id!!,
                 username = user.username!!,
                 email = user.email!!,
                 rol = user.normalizedRol

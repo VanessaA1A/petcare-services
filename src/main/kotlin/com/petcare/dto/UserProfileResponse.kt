@@ -1,10 +1,9 @@
 package com.petcare.dto
 
 import com.petcare.model.User
-import java.util.UUID
 
 data class UserProfileResponse(
-    val id: UUID,
+    val id: Int,
     val username: String,
     val email: String,
     val rol: String?,

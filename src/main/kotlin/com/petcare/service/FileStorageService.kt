@@ -4,13 +4,11 @@ import com.petcare.exception.StorageException
 import org.springframework.stereotype.Service
 import org.springframework.util.StringUtils
 import org.springframework.web.multipart.MultipartFile
-import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Instant
-import java.util.*
 
 @Service
 class FileStorageService {
@@ -27,7 +25,7 @@ class FileStorageService {
         }
     }
 
-    fun storeProfileImage(userId: UUID, file: MultipartFile): String {
+    fun storeProfileImage(userId: Int, file: MultipartFile): String {
         if (file.isEmpty) {
             throw StorageException("File is empty")
         }

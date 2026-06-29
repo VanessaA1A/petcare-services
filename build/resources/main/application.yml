@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/PetCareBd
+    url: jdbc:postgresql://localhost:5432/PetCareBD
     username: postgres
-    password: 2006
+    password: kelly123
   jpa:
     hibernate:
       ddl-auto: update

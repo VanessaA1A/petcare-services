@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import java.net.MalformedURLException
 import java.nio.file.Path
-import java.util.*
 
 @RestController
 @RequestMapping("/api/usuarios")
@@ -80,7 +79,7 @@ class UsuarioProfileController(
     }
 
     @GetMapping("/{id}/foto")
-    fun serveProfilePhoto(@PathVariable id: UUID): ResponseEntity<*> {
+    fun serveProfilePhoto(@PathVariable id: Int): ResponseEntity<*> {
         val user = userService.findById(id).orElseThrow { UserNotFoundException("User not found") }
         val filename = user.fotoPerfilFilename ?: throw StorageException("User has no profile photo")
         val path: Path = fileStorageService.loadProfileImage(filename)

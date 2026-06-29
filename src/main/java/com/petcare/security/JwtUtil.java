@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
-import java.util.UUID;
 
 @Component
 public class JwtUtil {
@@ -21,7 +20,7 @@ public class JwtUtil {
         this.secretKey = Keys.hmacShaKeyFor(jwtConfig.getSecret().getBytes());
     }
 
-    public String generateToken(UUID userId, String email) {
+    public String generateToken(Integer userId, String email) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + jwtConfig.getExpirationMs());
 
