@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/PetCareBD
     username: postgres
-    password: kelly123
+    password: Nahum123
   jpa:
     hibernate:
       ddl-auto: update
@@ -24,5 +24,3 @@ jwt:
   secret: "YourJWTSecretKeyChangeThisToA32CharLongString!"
   expirationMs: 3600000
 
-server:
-  port: 8080

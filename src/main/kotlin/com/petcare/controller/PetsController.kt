@@ -30,7 +30,7 @@ class PetsController(private val petService: PetService) {
             val pet = Pet()
             pet.ownerId = ownerId
             pet.name = name
-            pet.species = body.getOrDefault("species", null) as String?
+            pet.species = (body["species"] as? String)?.takeIf { it.isNotBlank() } ?: "Dog"
             pet.breed = breed
             pet.size = size
             if (body.containsKey("age")) pet.age = (body["age"] as Number).toInt()
@@ -54,7 +54,7 @@ class PetsController(private val petService: PetService) {
                 val p = Pet()
                 p.ownerId = owner
                 p.name = pm["name"] as String
-                p.species = pm.getOrDefault("species", null) as String?
+                p.species = (pm["species"] as? String)?.takeIf { it.isNotBlank() } ?: "Dog"
                 p.breed = pm["breed"] as String
                 p.size = pm["size"] as String
                 if (pm.containsKey("age")) p.age = (pm["age"] as Number).toInt()
@@ -75,7 +75,9 @@ class PetsController(private val petService: PetService) {
         if (po.isEmpty) return ResponseEntity.status(404).body(mapOf("error" to "Pet not found"))
         val p = po.get()
         if (body.containsKey("name")) p.name = body["name"] as String
-        if (body.containsKey("species")) p.species = body["species"] as String
+        if (body.containsKey("species")) {
+            p.species = (body["species"] as? String)?.takeIf { it.isNotBlank() } ?: "Dog"
+        }
         if (body.containsKey("breed")) p.breed = body["breed"] as String
         if (body.containsKey("size")) p.size = body["size"] as String
         if (body.containsKey("age")) p.age = (body["age"] as Number).toInt()
