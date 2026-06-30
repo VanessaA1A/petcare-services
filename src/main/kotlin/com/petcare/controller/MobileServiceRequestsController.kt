@@ -180,6 +180,7 @@ class MobileServiceApplicationsController(
         return try {
             val saved = when (request["status"].orEmpty().uppercase()) {
                 "ACCEPTED" -> service.acceptApplication(id)
+                "DONE_BY_CAREGIVER" -> service.markDoneByCaregiver(id)
                 "REJECTED" -> service.rejectApplication(id)
                 "CANCELLED" -> service.cancelApplication(id)
                 "COMPLETED" -> service.completeApplication(id)

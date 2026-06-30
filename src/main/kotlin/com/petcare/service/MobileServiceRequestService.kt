@@ -105,6 +105,22 @@ class MobileServiceRequestService(
         return applicationRepository.save(application)
     }
 
+    @Transactional
+    fun markDoneByCaregiver(id: Int): ServiceApplication? {
+        val application = applicationRepository.findById(id).orElse(null) ?: return null
+        if (application.status != "ACCEPTED") return null
+
+        application.status = "DONE_BY_CAREGIVER"
+        val saved = applicationRepository.save(application)
+
+        requestRepository.findById(application.serviceRequestId ?: -1).ifPresent { request ->
+            request.status = "DONE_BY_CAREGIVER"
+            requestRepository.save(request)
+        }
+
+        return saved
+    }
+
     fun cancelApplication(id: Int): ServiceApplication? {
         val application = applicationRepository.findById(id).orElse(null) ?: return null
         if (application.status != "ACCEPTED") {
@@ -127,7 +143,7 @@ class MobileServiceRequestService(
 
     fun completeApplication(id: Int): ServiceApplication? {
         val application = applicationRepository.findById(id).orElse(null) ?: return null
-        if (application.status != "ACCEPTED") return null
+        if (application.status != "ACCEPTED" && application.status != "DONE_BY_CAREGIVER") return null
 
         application.status = "COMPLETED"
         val saved = applicationRepository.save(application)
