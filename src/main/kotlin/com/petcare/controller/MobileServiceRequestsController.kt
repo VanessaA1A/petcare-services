@@ -2,6 +2,8 @@ package com.petcare.controller
 
 import com.petcare.dto.ServiceApplicationDTO
 import com.petcare.dto.ServiceRequestDTO
+import com.petcare.model.ServiceApplication
+import com.petcare.repository.UserRepository
 import com.petcare.service.CancellationNotAllowedException
 import com.petcare.service.MobileServiceRequestService
 import com.petcare.websocket.WsEvent
@@ -127,16 +129,17 @@ class MobileServiceRequestsController(
 @RequestMapping("/api/service-applications")
 class MobileServiceApplicationsController(
     private val service: MobileServiceRequestService,
+    private val userRepository: UserRepository,
     private val wsEventService: WsEventService
 ) {
     @GetMapping("/caregiver/{caregiverId}")
     fun byCaregiver(@PathVariable caregiverId: Int) = ResponseEntity.ok(
-        service.applicationsByCaregiver(caregiverId).map { ServiceApplicationDTO.fromEntity(it) }
+        service.applicationsByCaregiver(caregiverId).map { it.toDtoWithNames() }
     )
 
     @GetMapping("/owner/{ownerId}")
     fun byOwner(@PathVariable ownerId: Int) = ResponseEntity.ok(
-        service.applicationsByOwner(ownerId).map { ServiceApplicationDTO.fromEntity(it) }
+        service.applicationsByOwner(ownerId).map { it.toDtoWithNames() }
     )
 
     @PostMapping
@@ -148,7 +151,7 @@ class MobileServiceApplicationsController(
         }
 
         val saved = service.saveApplication(request.toEntity())
-        val savedDto = ServiceApplicationDTO.fromEntity(saved)
+        val savedDto = saved.toDtoWithNames()
 
         val serviceRequest = service.findRequest(savedDto.serviceRequestId)
         if (serviceRequest.isPresent) {
@@ -202,7 +205,7 @@ class MobileServiceApplicationsController(
                     .body(mapOf("error" to "Service application not found"))
             }
 
-            val savedDto = ServiceApplicationDTO.fromEntity(saved)
+            val savedDto = saved.toDtoWithNames()
             val relatedRequest = service.findRequest(savedDto.serviceRequestId)
 
             if (relatedRequest.isPresent) {
@@ -244,6 +247,25 @@ class MobileServiceApplicationsController(
         } catch (ex: CancellationNotAllowedException) {
             ResponseEntity.badRequest().body(mapOf("error" to ex.message))
         }
+    }
+
+    private fun ServiceApplication.toDtoWithNames(): ServiceApplicationDTO {
+        val request = service.findRequest(serviceRequestId ?: -1).orElse(null)
+        val ownerName = request?.ownerId?.let { userDisplayName(it) }
+        val caregiverName = caregiverId?.let { userDisplayName(it) }
+        return ServiceApplicationDTO.fromEntity(
+            entity = this,
+            ownerName = ownerName,
+            caregiverName = caregiverName
+        )
+    }
+
+    private fun userDisplayName(userId: Int): String? {
+        val user = userRepository.findById(userId).orElse(null) ?: return null
+        val fullName = listOfNotNull(user.nombre, user.apellido)
+            .joinToString(" ")
+            .trim()
+        return fullName.ifBlank { user.username.orEmpty() }.ifBlank { user.email }
     }
 }
 

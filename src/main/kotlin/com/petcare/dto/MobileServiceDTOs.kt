@@ -120,6 +120,8 @@ data class ServiceApplicationDTO(
     @JsonProperty("offered_service_id") val offeredServiceId: Int? = null,
     @JsonProperty("initiated_by") val initiatedBy: String = "CAREGIVER",
     val status: String = "PENDING",
+    @JsonProperty("owner_name") val ownerName: String? = null,
+    @JsonProperty("caregiver_name") val caregiverName: String? = null,
     @JsonProperty("created_at") val createdAt: String? = null
 ) {
     fun toEntity(existing: ServiceApplication? = null): ServiceApplication {
@@ -133,13 +135,19 @@ data class ServiceApplicationDTO(
     }
 
     companion object {
-        fun fromEntity(entity: ServiceApplication) = ServiceApplicationDTO(
+        fun fromEntity(
+            entity: ServiceApplication,
+            ownerName: String? = null,
+            caregiverName: String? = null
+        ) = ServiceApplicationDTO(
             id = entity.id,
             serviceRequestId = entity.serviceRequestId ?: 0,
             caregiverId = entity.caregiverId ?: 0,
             offeredServiceId = entity.offeredServiceId,
             initiatedBy = entity.initiatedBy,
             status = entity.status,
+            ownerName = ownerName,
+            caregiverName = caregiverName,
             createdAt = entity.createdAt?.toString()
         )
     }
