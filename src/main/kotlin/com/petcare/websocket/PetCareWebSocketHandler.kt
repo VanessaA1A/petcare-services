@@ -1,5 +1,10 @@
 package com.petcare.websocket
 
+/*
+ * Comentario de modulo PetCare:
+ * Soporte WebSocket. Maneja sesiones y eventos enviados en tiempo real a la app.
+ */
+
 import org.springframework.stereotype.Component
 import org.springframework.web.socket.CloseStatus
 import org.springframework.web.socket.TextMessage
@@ -12,6 +17,7 @@ class PetCareWebSocketHandler(
 ) : TextWebSocketHandler() {
 
     override fun afterConnectionEstablished(session: WebSocketSession) {
+        // El cliente se registra con userId para enviarle mensajes directos.
         val userId = session.uri
             ?.query
             ?.split("&")
@@ -45,10 +51,12 @@ class PetCareWebSocketHandler(
     }
 
     override fun afterConnectionClosed(session: WebSocketSession, status: CloseStatus) {
+        // Al cerrar la conexion se elimina la sesion para no enviar mensajes a sockets viejos.
         registry.remove(session)
     }
 
     override fun handleTextMessage(session: WebSocketSession, message: TextMessage) {
+        // Echo se deja como apoyo para probar el WebSocket desde ws-test.html.
         session.sendMessage(
             TextMessage(
                 """

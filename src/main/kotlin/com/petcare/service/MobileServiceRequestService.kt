@@ -1,5 +1,10 @@
 package com.petcare.service
 
+/*
+ * Comentario de modulo PetCare:
+ * Servicio de negocio. Contiene reglas de PetCare que no deben vivir directamente en los controladores.
+ */
+
 import com.petcare.model.ServiceApplication
 import com.petcare.model.ServiceRequest
 import com.petcare.repository.OfferedServiceRepository
@@ -21,6 +26,7 @@ class MobileServiceRequestService(
 
     @Transactional
     fun createRequest(request: ServiceRequest): ServiceRequest {
+        // Normalizamos estado y origen para que Android y PostgreSQL manejen los mismos valores.
         if ((request.id ?: 0) <= 0) request.id = generateRequestId()
         request.status = request.status.ifBlank { "PENDING" }.uppercase()
         request.sourceType = request.sourceType.ifBlank { "OPEN" }.uppercase()
@@ -32,6 +38,7 @@ class MobileServiceRequestService(
 
 
     private fun createOwnerInitiatedApplicationIfNeeded(request: ServiceRequest) {
+        // Si el dueno solicita una oferta concreta, se crea una postulacion iniciada por OWNER.
         if (request.sourceType != "OFFER") return
         val requestId = request.id ?: return
         val offeredServiceId = request.offeredServiceId ?: return
@@ -79,6 +86,7 @@ class MobileServiceRequestService(
 
     @Transactional
     fun acceptApplication(id: Int): ServiceApplication? {
+        // Aceptar una postulacion toma la solicitud y rechaza las demas pendientes.
         val application = applicationRepository.findById(id).orElse(null) ?: return null
         if (application.status != "PENDING") return null
 
@@ -107,6 +115,7 @@ class MobileServiceRequestService(
 
     @Transactional
     fun markDoneByCaregiver(id: Int): ServiceApplication? {
+        // El cuidador solo marca realizado; el cierre final lo confirma el dueno.
         val application = applicationRepository.findById(id).orElse(null) ?: return null
         if (application.status != "ACCEPTED") return null
 
@@ -122,6 +131,7 @@ class MobileServiceRequestService(
     }
 
     fun cancelApplication(id: Int): ServiceApplication? {
+        // La regla de cancelacion vive aqui para que todos los endpoints la respeten.
         val application = applicationRepository.findById(id).orElse(null) ?: return null
         if (application.status != "ACCEPTED") {
             throw CancellationNotAllowedException("Solo se pueden cancelar servicios confirmados.")
@@ -142,6 +152,7 @@ class MobileServiceRequestService(
     }
 
     fun completeApplication(id: Int): ServiceApplication? {
+        // COMPLETED es el estado final que envia el servicio al historial.
         val application = applicationRepository.findById(id).orElse(null) ?: return null
         if (application.status != "ACCEPTED" && application.status != "DONE_BY_CAREGIVER") return null
 

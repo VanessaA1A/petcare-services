@@ -1,5 +1,10 @@
 package com.petcare.controller
 
+/*
+ * Comentario de modulo PetCare:
+ * Controlador REST. Recibe peticiones HTTP, valida el flujo basico y delega la logica al servicio.
+ */
+
 import com.petcare.exception.StorageException
 import com.petcare.exception.UserNotFoundException
 import org.springframework.http.HttpStatus

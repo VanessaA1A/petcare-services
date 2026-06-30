@@ -1,5 +1,10 @@
 package com.petcare
 
+/*
+ * Comentario de modulo PetCare:
+ * Archivo del proyecto PetCare. Mantiene una parte especifica de la app y debe conservarse simple de seguir.
+ */
+
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 

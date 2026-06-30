@@ -1,5 +1,10 @@
 package com.petcare;
 
+/*
+ * Comentario de modulo PetCare:
+ * Clase Java del proyecto PetCare. Mantiene compatibilidad con partes del backend que aun no estan en Kotlin.
+ */
+
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;

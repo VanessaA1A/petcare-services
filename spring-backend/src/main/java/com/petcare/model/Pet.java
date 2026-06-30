@@ -1,5 +1,10 @@
 package com.petcare.model;
 
+/*
+ * Comentario de modulo PetCare:
+ * Modelo legacy. Representa tablas usadas por la version anterior del backend.
+ */
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

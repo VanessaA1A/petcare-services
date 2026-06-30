@@ -1,5 +1,10 @@
 package com.petcare.exception;
 
+/*
+ * Comentario de modulo PetCare:
+ * Manejo de errores. Centraliza respuestas cuando algo falla en la API.
+ */
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;

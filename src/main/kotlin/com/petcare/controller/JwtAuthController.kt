@@ -1,5 +1,10 @@
 package com.petcare.controller
 
+/*
+ * Comentario de modulo PetCare:
+ * Controlador REST. Recibe peticiones HTTP, valida el flujo basico y delega la logica al servicio.
+ */
+
 import com.petcare.dto.LoginRequest
 import com.petcare.dto.LoginResponse
 import com.petcare.model.User

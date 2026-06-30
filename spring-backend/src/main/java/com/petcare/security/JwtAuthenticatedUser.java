@@ -1,5 +1,10 @@
 package com.petcare.security;
 
+/*
+ * Comentario de modulo PetCare:
+ * Seguridad del backend. Configura autenticacion, JWT y usuarios reconocidos por Spring Security.
+ */
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 

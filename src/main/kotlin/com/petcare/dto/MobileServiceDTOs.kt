@@ -1,5 +1,10 @@
 package com.petcare.dto
 
+/*
+ * Comentario de modulo PetCare:
+ * Servicio de negocio. Contiene reglas de PetCare que no deben vivir directamente en los controladores.
+ */
+
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.petcare.model.OfferedService
 import com.petcare.model.ServiceApplication

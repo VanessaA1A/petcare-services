@@ -1,5 +1,10 @@
 package com.petcare.security;
 
+/*
+ * Comentario de modulo PetCare:
+ * Seguridad del backend. Configura autenticacion, JWT y usuarios reconocidos por Spring Security.
+ */
+
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

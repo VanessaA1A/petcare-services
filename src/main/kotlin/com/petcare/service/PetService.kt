@@ -1,5 +1,10 @@
 package com.petcare.service
 
+/*
+ * Comentario de modulo PetCare:
+ * Servicio de negocio. Contiene reglas de PetCare que no deben vivir directamente en los controladores.
+ */
+
 import com.petcare.model.Pet
 import com.petcare.repository.PetRepository
 import org.springframework.stereotype.Service

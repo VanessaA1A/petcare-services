@@ -1,5 +1,10 @@
 package com.petcare.config
 
+/*
+ * Comentario de modulo PetCare:
+ * Configuracion del backend. Agrupa ajustes tecnicos que Spring necesita al iniciar.
+ */
+
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Info
 import org.springframework.context.annotation.Bean

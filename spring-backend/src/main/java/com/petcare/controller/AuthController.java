@@ -1,5 +1,10 @@
 package com.petcare.controller;
 
+/*
+ * Comentario de modulo PetCare:
+ * Controlador REST legacy. Recibe peticiones HTTP y delega la logica al servicio.
+ */
+
 import com.petcare.dto.SessionDto;
 import com.petcare.dto.UsuarioDto;
 import com.petcare.model.Usuario;

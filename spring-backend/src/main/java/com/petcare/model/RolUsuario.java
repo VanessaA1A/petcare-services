@@ -1,5 +1,10 @@
 package com.petcare.model;
 
+/*
+ * Comentario de modulo PetCare:
+ * Modelo legacy. Representa tablas usadas por la version anterior del backend.
+ */
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 

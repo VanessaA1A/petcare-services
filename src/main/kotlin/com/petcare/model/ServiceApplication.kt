@@ -1,5 +1,10 @@
 package com.petcare.model
 
+/*
+ * Comentario de modulo PetCare:
+ * Servicio de negocio. Contiene reglas de PetCare que no deben vivir directamente en los controladores.
+ */
+
 import jakarta.persistence.*
 import java.time.OffsetDateTime
 

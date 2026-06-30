@@ -1,5 +1,10 @@
 package com.petcare.controller
 
+/*
+ * Comentario de modulo PetCare:
+ * Controlador REST. Recibe peticiones HTTP, valida el flujo basico y delega la logica al servicio.
+ */
+
 import com.petcare.dto.ServiceApplicationDTO
 import com.petcare.dto.ServiceRequestDTO
 import com.petcare.model.ServiceApplication
@@ -19,11 +24,13 @@ class MobileServiceRequestsController(
 ) {
     @GetMapping("/owner/{ownerId}")
     fun byOwner(@PathVariable ownerId: Int) = ResponseEntity.ok(
+        // Devuelve las solicitudes del dueno para alimentar inicio e historial.
         service.byOwner(ownerId).map { ServiceRequestDTO.fromEntity(it) }
     )
 
     @GetMapping("/available")
     fun available() = ResponseEntity.ok(
+        // Solo se publican solicitudes abiertas y pendientes para cuidadores.
         service.available().map { ServiceRequestDTO.fromEntity(it) }
     )
 
@@ -36,6 +43,7 @@ class MobileServiceRequestsController(
 
     @PostMapping
     fun create(@RequestBody body: Map<String, Any?>): ResponseEntity<*> {
+        // Android envia snake_case; el mapper acepta tambien camelCase para facilitar pruebas.
         val request = body.toServiceRequestDTO()
         if (request.ownerId <= 0 || request.petId <= 0 || request.serviceTypeId <= 0 || request.title.isBlank()) {
             return ResponseEntity.badRequest()
@@ -45,6 +53,7 @@ class MobileServiceRequestsController(
         val saved = service.createRequest(request.toEntity())
         val savedDto = ServiceRequestDTO.fromEntity(saved)
 
+        // Aviso en tiempo real para confirmar al dueno que la solicitud se publico.
         wsEventService.sendToUser(
             savedDto.ownerId,
             WsEvent(
@@ -64,6 +73,7 @@ class MobileServiceRequestsController(
         @PathVariable id: Int,
         @RequestBody request: Map<String, String>
     ): ResponseEntity<*> {
+        // Este endpoint permite mover una solicitud entre estados sin crear otra.
         val existing = service.findRequest(id)
         if (existing.isEmpty) {
             return ResponseEntity.status(404).body(mapOf("error" to "Service request not found"))
@@ -75,6 +85,7 @@ class MobileServiceRequestsController(
         val savedDto = ServiceRequestDTO.fromEntity(saved)
 
         if (savedDto.ownerId > 0) {
+            // El dueno recibe actualizaciones cuando cambia el estado de su solicitud.
             wsEventService.sendToUser(
                 savedDto.ownerId,
                 WsEvent(
@@ -144,6 +155,7 @@ class MobileServiceApplicationsController(
 
     @PostMapping
     fun create(@RequestBody body: Map<String, Any?>): ResponseEntity<*> {
+        // Una postulacion puede venir del cuidador o nacer desde una oferta del dueno.
         val request = body.toServiceApplicationDTO()
         if (request.serviceRequestId <= 0 || request.caregiverId <= 0) {
             return ResponseEntity.badRequest()
@@ -158,6 +170,7 @@ class MobileServiceApplicationsController(
             val ownerId = serviceRequest.get().ownerId ?: 0
 
             if (ownerId > 0) {
+                // El dueno ve en tiempo real cuando un cuidador se interesa.
                 wsEventService.sendToUser(
                     ownerId,
                     WsEvent(
@@ -181,6 +194,7 @@ class MobileServiceApplicationsController(
         @RequestBody request: Map<String, String>
     ): ResponseEntity<*> {
         return try {
+            // Los estados especiales usan metodos del servicio porque tienen reglas propias.
             val saved = when (request["status"].orEmpty().uppercase()) {
                 "ACCEPTED" -> service.acceptApplication(id)
                 "DONE_BY_CAREGIVER" -> service.markDoneByCaregiver(id)
@@ -215,6 +229,7 @@ class MobileServiceApplicationsController(
                 val status = savedDto.status.uppercase()
 
                 if (ownerId > 0) {
+                    // Ambos lados reciben el cambio para actualizar sus pantallas.
                     wsEventService.sendToUser(
                         ownerId,
                         WsEvent(

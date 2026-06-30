@@ -1,5 +1,10 @@
 package com.petcare.util
 
+/*
+ * Comentario de modulo PetCare:
+ * Utilidad compartida. Evita repetir reglas pequenas en varias partes del proyecto.
+ */
+
 import java.security.MessageDigest
 
 object HashUtil {

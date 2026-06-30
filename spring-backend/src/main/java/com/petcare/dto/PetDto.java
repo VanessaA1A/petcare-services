@@ -1,5 +1,10 @@
 package com.petcare.dto;
 
+/*
+ * Comentario de modulo PetCare:
+ * Objeto de transferencia. Define datos simples que entran o salen por la API.
+ */
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;

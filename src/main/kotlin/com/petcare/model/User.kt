@@ -1,5 +1,10 @@
 package com.petcare.model
 
+/*
+ * Comentario de modulo PetCare:
+ * Entidad de dominio. Representa una tabla o concepto principal usado por la API.
+ */
+
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.petcare.util.RoleUtil

@@ -1,5 +1,10 @@
 package com.petcare.service;
 
+/*
+ * Comentario de modulo PetCare:
+ * Servicio legacy. Conserva reglas de negocio usadas por la version anterior del backend.
+ */
+
 import com.petcare.dto.UsuarioDto;
 import com.petcare.model.RolUsuario;
 import com.petcare.model.Usuario;

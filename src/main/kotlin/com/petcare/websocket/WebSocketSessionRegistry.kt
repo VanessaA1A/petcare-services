@@ -1,5 +1,10 @@
 package com.petcare.websocket
 
+/*
+ * Comentario de modulo PetCare:
+ * Soporte WebSocket. Maneja sesiones y eventos enviados en tiempo real a la app.
+ */
+
 import org.springframework.stereotype.Component
 import org.springframework.web.socket.TextMessage
 import org.springframework.web.socket.WebSocketSession
