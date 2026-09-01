@@ -8,32 +8,39 @@ package com.petcare.controller
 import com.petcare.dto.ServiceApplicationDTO
 import com.petcare.dto.ServiceRequestDTO
 import com.petcare.model.ServiceApplication
+import com.petcare.model.User
 import com.petcare.repository.UserRepository
 import com.petcare.service.CancellationNotAllowedException
 import com.petcare.service.MobileServiceRequestService
 import com.petcare.websocket.WsEvent
 import com.petcare.websocket.WsEventService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/service-requests")
+@Tag(name = "Solicitudes de servicio", description = "Solicitudes publicadas por los dueños de mascotas")
 class MobileServiceRequestsController(
     private val service: MobileServiceRequestService,
     private val wsEventService: WsEventService
 ) {
+    @Operation(summary = "Listar las solicitudes de un dueño")
     @GetMapping("/owner/{ownerId}")
     fun byOwner(@PathVariable ownerId: Int) = ResponseEntity.ok(
         // Devuelve las solicitudes del dueno para alimentar inicio e historial.
         service.byOwner(ownerId).map { ServiceRequestDTO.fromEntity(it) }
     )
 
+    @Operation(summary = "Listar solicitudes abiertas disponibles para cuidadores")
     @GetMapping("/available")
     fun available() = ResponseEntity.ok(
         // Solo se publican solicitudes abiertas y pendientes para cuidadores.
         service.available().map { ServiceRequestDTO.fromEntity(it) }
     )
 
+    @Operation(summary = "Obtener una solicitud de servicio por id")
     @GetMapping("/{id}")
     fun byId(@PathVariable id: Int): ResponseEntity<*> {
         val request = service.findRequest(id)
@@ -41,6 +48,7 @@ class MobileServiceRequestsController(
         else ResponseEntity.status(404).body(mapOf("error" to "Service request not found"))
     }
 
+    @Operation(summary = "Publicar una nueva solicitud de servicio")
     @PostMapping
     fun create(@RequestBody body: Map<String, Any?>): ResponseEntity<*> {
         // Android envia snake_case; el mapper acepta tambien camelCase para facilitar pruebas.
@@ -68,6 +76,7 @@ class MobileServiceRequestsController(
         return ResponseEntity.status(201).body(savedDto)
     }
 
+    @Operation(summary = "Cambiar el estado de una solicitud de servicio")
     @PutMapping("/{id}/status")
     fun updateStatus(
         @PathVariable id: Int,
@@ -101,6 +110,7 @@ class MobileServiceRequestsController(
         return ResponseEntity.ok(savedDto)
     }
 
+    @Operation(summary = "Actualizar fecha/horario de una solicitud de servicio")
     @PutMapping("/{id}/schedule")
     fun updateSchedule(
         @PathVariable id: Int,
@@ -138,21 +148,25 @@ class MobileServiceRequestsController(
 
 @RestController
 @RequestMapping("/api/service-applications")
+@Tag(name = "Postulaciones", description = "Postulaciones de cuidadores a solicitudes, y ofertas iniciadas por el dueño. Incluyen nombre, teléfono y correo de ambas partes para contacto directo.")
 class MobileServiceApplicationsController(
     private val service: MobileServiceRequestService,
     private val userRepository: UserRepository,
     private val wsEventService: WsEventService
 ) {
+    @Operation(summary = "Listar las postulaciones de un cuidador")
     @GetMapping("/caregiver/{caregiverId}")
     fun byCaregiver(@PathVariable caregiverId: Int) = ResponseEntity.ok(
         service.applicationsByCaregiver(caregiverId).map { it.toDtoWithNames() }
     )
 
+    @Operation(summary = "Listar las postulaciones recibidas por un dueño")
     @GetMapping("/owner/{ownerId}")
     fun byOwner(@PathVariable ownerId: Int) = ResponseEntity.ok(
         service.applicationsByOwner(ownerId).map { it.toDtoWithNames() }
     )
 
+    @Operation(summary = "Crear una postulación", description = "Puede originarse desde el cuidador (se postula) o desde el dueño (acepta una oferta publicada).")
     @PostMapping
     fun create(@RequestBody body: Map<String, Any?>): ResponseEntity<*> {
         // Una postulacion puede venir del cuidador o nacer desde una oferta del dueno.
@@ -188,6 +202,7 @@ class MobileServiceApplicationsController(
         return ResponseEntity.status(201).body(savedDto)
     }
 
+    @Operation(summary = "Cambiar el estado de una postulación", description = "Estados especiales: ACCEPTED, DONE_BY_CAREGIVER, REJECTED, CANCELLED, COMPLETED.")
     @PutMapping("/{id}/status")
     fun updateStatus(
         @PathVariable id: Int,
@@ -266,17 +281,20 @@ class MobileServiceApplicationsController(
 
     private fun ServiceApplication.toDtoWithNames(): ServiceApplicationDTO {
         val request = service.findRequest(serviceRequestId ?: -1).orElse(null)
-        val ownerName = request?.ownerId?.let { userDisplayName(it) }
-        val caregiverName = caregiverId?.let { userDisplayName(it) }
+        val owner = request?.ownerId?.let { userRepository.findById(it).orElse(null) }
+        val caregiver = caregiverId?.let { userRepository.findById(it).orElse(null) }
         return ServiceApplicationDTO.fromEntity(
             entity = this,
-            ownerName = ownerName,
-            caregiverName = caregiverName
+            ownerName = owner?.let { userDisplayName(it) },
+            caregiverName = caregiver?.let { userDisplayName(it) },
+            ownerPhone = owner?.telefono,
+            ownerEmail = owner?.email,
+            caregiverPhone = caregiver?.telefono,
+            caregiverEmail = caregiver?.email
         )
     }
 
-    private fun userDisplayName(userId: Int): String? {
-        val user = userRepository.findById(userId).orElse(null) ?: return null
+    private fun userDisplayName(user: User): String? {
         val fullName = listOfNotNull(user.nombre, user.apellido)
             .joinToString(" ")
             .trim()

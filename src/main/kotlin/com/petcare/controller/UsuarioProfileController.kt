@@ -13,6 +13,8 @@ import com.petcare.model.User
 import com.petcare.service.FileStorageService
 import com.petcare.service.UserService
 import com.petcare.util.RoleUtil
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.core.io.Resource
 import org.springframework.core.io.UrlResource
 import org.springframework.http.HttpHeaders
@@ -28,11 +30,13 @@ import java.nio.file.Path
 
 @RestController
 @RequestMapping("/api/usuarios")
+@Tag(name = "Perfil de usuario", description = "Perfil del usuario autenticado (JWT): datos, foto de perfil")
 class UsuarioProfileController(
     private val userService: UserService,
     private val fileStorageService: FileStorageService
 ) {
 
+    @Operation(summary = "Obtener el perfil del usuario autenticado")
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
     fun getAuthenticatedProfile(authentication: Authentication): ResponseEntity<UserProfileResponse> {
@@ -42,6 +46,7 @@ class UsuarioProfileController(
         return ResponseEntity.ok(UserProfileResponse.fromUser(user))
     }
 
+    @Operation(summary = "Actualizar el perfil del usuario autenticado", description = "Permite editar nombre, apellido y teléfono.")
     @PutMapping("/me")
     @PreAuthorize("isAuthenticated()")
     fun updateProfile(authentication: Authentication, @RequestBody request: UpdateProfileRequest): ResponseEntity<UserProfileResponse> {
@@ -55,6 +60,7 @@ class UsuarioProfileController(
         return ResponseEntity.ok(UserProfileResponse.fromUser(saved))
     }
 
+    @Operation(summary = "Subir/reemplazar la foto de perfil del usuario autenticado")
     @PostMapping("/me/foto")
     @PreAuthorize("isAuthenticated()")
     fun uploadProfilePhoto(authentication: Authentication, @RequestParam("file") file: MultipartFile): ResponseEntity<UserProfileResponse> {
@@ -70,6 +76,7 @@ class UsuarioProfileController(
         return ResponseEntity.ok(UserProfileResponse.fromUser(saved))
     }
 
+    @Operation(summary = "Eliminar la foto de perfil del usuario autenticado")
     @DeleteMapping("/me/foto")
     @PreAuthorize("isAuthenticated()")
     fun deleteProfilePhoto(authentication: Authentication): ResponseEntity<Any> {
@@ -83,6 +90,7 @@ class UsuarioProfileController(
         return ResponseEntity.noContent().build()
     }
 
+    @Operation(summary = "Servir la imagen de perfil de un usuario por id")
     @GetMapping("/{id}/foto")
     fun serveProfilePhoto(@PathVariable id: Int): ResponseEntity<*> {
         val user = userService.findById(id).orElseThrow { UserNotFoundException("User not found") }

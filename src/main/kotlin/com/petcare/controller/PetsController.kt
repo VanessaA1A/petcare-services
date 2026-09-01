@@ -7,23 +7,29 @@ package com.petcare.controller
 
 import com.petcare.model.Pet
 import com.petcare.service.PetService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.math.BigDecimal
 
 @RestController
 @RequestMapping("/api/pets")
+@Tag(name = "Mascotas", description = "Gestión de mascotas de los propietarios")
 class PetsController(private val petService: PetService) {
 
+    @Operation(summary = "Listar mascotas de un propietario")
     @GetMapping("/owner/{owner_id}")
     fun getByOwner(@PathVariable owner_id: Int): ResponseEntity<*> = ResponseEntity.ok(petService.findByOwnerId(owner_id))
 
+    @Operation(summary = "Obtener una mascota por id")
     @GetMapping("/{id}")
     fun getById(@PathVariable id: Int): ResponseEntity<*> {
         val p = petService.findById(id)
         return if (p.isPresent) ResponseEntity.ok(p.get()) else ResponseEntity.status(404).body(mapOf("error" to "Pet not found"))
     }
 
+    @Operation(summary = "Registrar una mascota")
     @PostMapping
     fun createPet(@RequestBody body: Map<String, Any>): ResponseEntity<*> {
         return try {
@@ -48,6 +54,7 @@ class PetsController(private val petService: PetService) {
         }
     }
 
+    @Operation(summary = "Registrar varias mascotas de un propietario en una sola llamada")
     @PostMapping("/bulk")
     fun createBulk(@RequestBody body: Map<String, Any>): ResponseEntity<*> {
         val owner = body["owner_id"]?.toString()?.toIntOrNull()
@@ -74,6 +81,7 @@ class PetsController(private val petService: PetService) {
         }
     }
 
+    @Operation(summary = "Actualizar una mascota")
     @PutMapping("/{id}")
     fun updatePet(@PathVariable id: Int, @RequestBody body: Map<String, Any>): ResponseEntity<*> {
         val po = petService.findById(id)
@@ -92,12 +100,14 @@ class PetsController(private val petService: PetService) {
         return ResponseEntity.ok(saved)
     }
 
+    @Operation(summary = "Eliminar una mascota")
     @DeleteMapping("/{id}")
     fun deletePet(@PathVariable id: Int): ResponseEntity<*> {
         petService.delete(id)
         return ResponseEntity.noContent().build<Any>()
     }
 
+    @Operation(summary = "Listar todas las mascotas")
     @GetMapping("/all")
     fun getAll() = ResponseEntity.ok(petService.listAll())
 }

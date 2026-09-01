@@ -127,6 +127,10 @@ data class ServiceApplicationDTO(
     val status: String = "PENDING",
     @JsonProperty("owner_name") val ownerName: String? = null,
     @JsonProperty("caregiver_name") val caregiverName: String? = null,
+    @JsonProperty("owner_phone") val ownerPhone: String? = null,
+    @JsonProperty("owner_email") val ownerEmail: String? = null,
+    @JsonProperty("caregiver_phone") val caregiverPhone: String? = null,
+    @JsonProperty("caregiver_email") val caregiverEmail: String? = null,
     @JsonProperty("created_at") val createdAt: String? = null
 ) {
     fun toEntity(existing: ServiceApplication? = null): ServiceApplication {
@@ -143,7 +147,11 @@ data class ServiceApplicationDTO(
         fun fromEntity(
             entity: ServiceApplication,
             ownerName: String? = null,
-            caregiverName: String? = null
+            caregiverName: String? = null,
+            ownerPhone: String? = null,
+            ownerEmail: String? = null,
+            caregiverPhone: String? = null,
+            caregiverEmail: String? = null
         ) = ServiceApplicationDTO(
             id = entity.id,
             serviceRequestId = entity.serviceRequestId ?: 0,
@@ -153,6 +161,10 @@ data class ServiceApplicationDTO(
             status = entity.status,
             ownerName = ownerName,
             caregiverName = caregiverName,
+            ownerPhone = ownerPhone,
+            ownerEmail = ownerEmail,
+            caregiverPhone = caregiverPhone,
+            caregiverEmail = caregiverEmail,
             createdAt = entity.createdAt?.toString()
         )
     }

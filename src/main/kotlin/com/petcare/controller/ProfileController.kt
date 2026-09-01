@@ -7,14 +7,18 @@ package com.petcare.controller
 
 import com.petcare.service.AuthService
 import com.petcare.service.UserService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
+@Tag(name = "Perfil", description = "Perfil del usuario autenticado (legacy, ver también /api/usuarios/me)")
 class ProfileController(private val authService: AuthService, private val userService: UserService) {
 
+    @Operation(summary = "Obtener perfil por token de sesión")
     @GetMapping("/profile")
     fun profile(@RequestHeader(value = "Authorization", required = false) auth: String?): ResponseEntity<*> {
         if (auth == null || !auth.startsWith("Bearer ")) return ResponseEntity.status(401).body(mapOf("error" to "Not authenticated"))

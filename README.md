@@ -36,6 +36,20 @@ Este repositorio ahora contiene un backend completo en Kotlin con Spring Boot.
 ./gradlew bootRun
 ```
 
+## Ejecutar con Docker
+1. Copia `.env.example` a `.env` y ajusta las contraseñas/secretos.
+2. Levanta todo el stack (Postgres + backend + pgAdmin):
+```powershell
+docker compose up --build
+```
+3. La API queda en `http://localhost:8080`, pgAdmin en `http://localhost:5050`.
+4. La base de datos se inicializa automáticamente con `database/petcare_restore.sql` (esquema + datos de prueba) en el primer arranque del contenedor `db`.
+
+## Documentación de la API (Swagger)
+Con el backend corriendo (local o en Docker), la documentación interactiva está disponible en:
+- `http://localhost:8080/swagger-ui.html`
+- `http://localhost:8080/api-docs` (spec OpenAPI en JSON)
+
 ## Notas
 - Este proyecto ya no depende del backend JavaScript/TypeScript previo.
 - Si quieres, puedo limpiar los archivos legacy restantes y dejar solo el backend Kotlin/Spring Boot.

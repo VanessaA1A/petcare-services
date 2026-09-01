@@ -11,6 +11,8 @@ import com.petcare.security.JwtUtil
 import com.petcare.service.ActivityService
 import com.petcare.service.AuthService
 import com.petcare.service.UserService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.web.bind.annotation.*
@@ -19,6 +21,7 @@ import java.util.*
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Auth", description = "Registro, login y sesión de usuarios (autenticación basada en cookies/sesión)")
 class AuthController(
     private val authService: AuthService,
     private val userService: UserService,
@@ -27,6 +30,7 @@ class AuthController(
     private val passwordEncoder: PasswordEncoder
 ) {
 
+    @Operation(summary = "Registrar un nuevo usuario", description = "Crea un usuario con email/contraseña y abre una sesión.")
     @PostMapping("/registro")
     fun register(@RequestBody body: Map<String, String>): ResponseEntity<*> {
         val email = body["email"]?.trim()
@@ -60,6 +64,7 @@ class AuthController(
         )
     }
 
+    @Operation(summary = "Iniciar sesión", description = "Valida credenciales y crea una sesión, registrando la actividad de login.")
     @PostMapping("/login")
     fun login(@RequestBody body: Map<String, String>, @RequestHeader(value = "User-Agent", required = false) userAgent: String?, @RequestHeader(value = "X-Forwarded-For", required = false) xff: String?): ResponseEntity<*> {
         val email = body["email"]?.trim()
@@ -90,6 +95,7 @@ class AuthController(
         )
     }
 
+    @Operation(summary = "Solicitar recuperación de contraseña", description = "Genera un token de recuperación temporal para el email indicado.")
     @PostMapping("/recover")
     fun recover(@RequestBody body: Map<String, String>): ResponseEntity<*> {
         val email = body["email"] ?: return ResponseEntity.badRequest().body(mapOf("error" to "email required"))
@@ -103,6 +109,7 @@ class AuthController(
         return ResponseEntity.ok(mapOf("message" to "Recovery token created", "token" to token))
     }
 
+    @Operation(summary = "Obtener el usuario autenticado", description = "Devuelve el usuario y la sesión asociados al token Bearer enviado.")
     @GetMapping("/me")
     fun me(@RequestHeader(value = "Authorization", required = false) auth: String?): ResponseEntity<*> {
         if (auth == null || !auth.startsWith("Bearer ")) return ResponseEntity.status(401).body(mapOf("error" to "Not authenticated"))

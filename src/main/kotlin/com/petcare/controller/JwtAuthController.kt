@@ -11,6 +11,8 @@ import com.petcare.model.User
 import com.petcare.security.JwtUtil
 import com.petcare.service.AuthService
 import com.petcare.service.UserService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -19,12 +21,14 @@ import java.util.*
 
 @RestController
 @RequestMapping("/api")
+@Tag(name = "Auth JWT", description = "Login con JWT para la app móvil")
 class JwtAuthController(
     private val authService: AuthService,
     private val userService: UserService,
     private val jwtUtil: JwtUtil
 ) {
 
+    @Operation(summary = "Iniciar sesión (JWT)", description = "Valida credenciales y devuelve un token JWT junto con los datos públicos del usuario.")
     @PostMapping("/login")
     fun login(@Valid @RequestBody request: LoginRequest): ResponseEntity<*> {
         val email = request.email.trim()

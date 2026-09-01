@@ -13,4 +13,5 @@ interface RatingRepository : JpaRepository<Rating, Int> {
     fun findByCaregiverIdAndRatedByRole(caregiverId: Int, ratedByRole: String): List<Rating>
     fun findByCaregiverIdAndRatedByRoleOrderByCreatedAtDesc(caregiverId: Int, ratedByRole: String): List<Rating>
     fun findByOwnerIdAndRatedByRole(ownerId: Int, ratedByRole: String): List<Rating>
+    fun findByOwnerIdAndRatedByRoleOrderByCreatedAtDesc(ownerId: Int, ratedByRole: String): List<Rating>
 }

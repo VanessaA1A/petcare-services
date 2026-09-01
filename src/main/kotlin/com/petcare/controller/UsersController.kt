@@ -10,11 +10,14 @@ import com.petcare.service.ActivityService
 import com.petcare.service.AuthService
 import com.petcare.service.UserService
 import com.petcare.util.RoleUtil
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/users")
+@Tag(name = "Usuarios", description = "Administración de usuarios (alta, consulta, roles)")
 class UsersController(
     private val userService: UserService,
     private val authService: AuthService,
@@ -22,6 +25,7 @@ class UsersController(
     private val passwordEncoder: org.springframework.security.crypto.password.PasswordEncoder
 ) {
 
+    @Operation(summary = "Crear un usuario")
     @PostMapping
     fun createUser(@RequestBody body: Map<String, Any>): ResponseEntity<*> {
         val username = (body["username"] as? String)?.trim()
@@ -53,15 +57,18 @@ class UsersController(
         }
     }
 
+    @Operation(summary = "Listar todos los usuarios")
     @GetMapping
     fun getAll() = ResponseEntity.ok(userService.listAll())
 
+    @Operation(summary = "Obtener un usuario por id")
     @GetMapping("/{id}")
     fun getById(@PathVariable id: Int): ResponseEntity<*> {
         val u = userService.findById(id)
         return if (u.isPresent) ResponseEntity.ok(u.get()) else ResponseEntity.status(404).body(mapOf("error" to "User not found"))
     }
 
+    @Operation(summary = "Actualizar un usuario")
     @PutMapping("/{id}")
     fun updateUser(@PathVariable id: Int, @RequestBody body: Map<String, Any>): ResponseEntity<*> {
         return try {
@@ -80,12 +87,14 @@ class UsersController(
         }
     }
 
+    @Operation(summary = "Eliminar un usuario")
     @DeleteMapping("/{id}")
     fun deleteUser(@PathVariable id: Int): ResponseEntity<*> {
         userService.delete(id)
         return ResponseEntity.noContent().build<Any>()
     }
 
+    @Operation(summary = "Asignar/cambiar el rol de un usuario")
     @PostMapping("/{id}/roles")
     fun assignRoles(@PathVariable id: Int, @RequestBody body: Map<String, String>): ResponseEntity<*> {
         val role = body["role"] ?: body["rol"] ?: return ResponseEntity.badRequest().body(mapOf("error" to "role is required"))

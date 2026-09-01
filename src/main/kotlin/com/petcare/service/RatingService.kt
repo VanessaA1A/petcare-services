@@ -46,4 +46,7 @@ class RatingService(
 
     fun caregiverReviews(caregiverId: Int): List<Rating> =
         repository.findByCaregiverIdAndRatedByRoleOrderByCreatedAtDesc(caregiverId, "OWNER")
+
+    fun ownerReviews(ownerId: Int): List<Rating> =
+        repository.findByOwnerIdAndRatedByRoleOrderByCreatedAtDesc(ownerId, "CAREGIVER")
 }
