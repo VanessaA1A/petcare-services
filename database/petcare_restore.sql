@@ -631,6 +631,15 @@ ALTER TABLE ONLY public.usuarios
 
 
 --
+-- Regla de negocio: un usuario no puede tener a la vez rol de propietario y de
+-- cuidador. Los usuarios de este respaldo ya tienen un rol en uso, se marcan
+-- confirmados; las cuentas nuevas nacen sin confirmar hasta elegir su rol.
+--
+
+ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS rol_confirmado boolean NOT NULL DEFAULT true;
+ALTER TABLE public.usuarios ALTER COLUMN rol_confirmado SET DEFAULT false;
+
+--
 -- PostgreSQL database dump complete
 --
 

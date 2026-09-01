@@ -15,6 +15,7 @@ CREATE TABLE usuarios (
   email text UNIQUE NOT NULL,
   password_hash text NOT NULL,
   rol rol_usuario NOT NULL DEFAULT 'gestor',
+  rol_confirmado boolean NOT NULL DEFAULT false,
   nombre text,
   apellido text,
   telefono text,

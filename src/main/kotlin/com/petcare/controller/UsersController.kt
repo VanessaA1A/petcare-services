@@ -78,7 +78,10 @@ class UsersController(
             if (body.containsKey("username")) u.username = (body["username"] as? String)?.trim()
             if (body.containsKey("email")) u.email = (body["email"] as? String)?.trim()?.lowercase()
             if (body.containsKey("password")) u.passwordHash = passwordEncoder.encode(body["password"] as String)
-            if (body.containsKey("rol")) u.rol = RoleUtil.normalizeRoleForDatabase(body["rol"] as? String) ?: u.rol
+            if (body.containsKey("rol")) {
+                val rejected = applyRoleChange(u, body["rol"] as? String)
+                if (rejected != null) return rejected
+            }
             if (body.containsKey("is_active")) u.isActive = body["is_active"] as? Boolean
             val saved = userService.save(u)
             ResponseEntity.ok(saved)
@@ -94,15 +97,35 @@ class UsersController(
         return ResponseEntity.noContent().build<Any>()
     }
 
-    @Operation(summary = "Asignar/cambiar el rol de un usuario")
+    @Operation(summary = "Confirmar el rol de un usuario (propietario o cuidador)", description = "Solo se puede usar una vez por cuenta: un usuario no puede ser propietario y cuidador a la vez.")
     @PostMapping("/{id}/roles")
     fun assignRoles(@PathVariable id: Int, @RequestBody body: Map<String, String>): ResponseEntity<*> {
         val role = body["role"] ?: body["rol"] ?: return ResponseEntity.badRequest().body(mapOf("error" to "role is required"))
         val uo = userService.findById(id)
         if (uo.isEmpty) return ResponseEntity.status(404).body(mapOf("error" to "User not found"))
         val u = uo.get()
-        u.rol = RoleUtil.normalizeRoleForDatabase(role) ?: u.rol
+        val rejected = applyRoleChange(u, role)
+        if (rejected != null) return rejected
         val saved = userService.save(u)
         return ResponseEntity.ok(saved)
+    }
+
+    /**
+     * Regla de negocio: un usuario no puede ser propietario y cuidador a la vez.
+     * Se permite elegir el rol una sola vez (rolConfirmado pasa a true); despues de eso,
+     * cualquier intento de cambiarlo a un rol distinto se rechaza con 400.
+     * Devuelve null si el cambio se aplico sobre `u`, o la respuesta de error a devolver si se rechazo.
+     */
+    private fun applyRoleChange(u: User, rawRole: String?): ResponseEntity<*>? {
+        val normalized = RoleUtil.normalizeRoleForDatabase(rawRole)
+            ?: return ResponseEntity.badRequest().body(mapOf("error" to "Rol invalido"))
+        if (u.rolConfirmado == true && normalized != u.rol) {
+            return ResponseEntity.status(400).body(
+                mapOf("error" to "Ya elegiste tu rol (propietario o cuidador) y no puedes cambiarlo. Si necesitas ayuda, contacta a soporte.")
+            )
+        }
+        u.rol = normalized
+        u.rolConfirmado = true
+        return null
     }
 }

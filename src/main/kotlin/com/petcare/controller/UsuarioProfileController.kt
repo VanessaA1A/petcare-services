@@ -36,6 +36,23 @@ class UsuarioProfileController(
     private val fileStorageService: FileStorageService
 ) {
 
+    @Operation(
+        summary = "Verificar el rol confirmado de una cuenta por email",
+        description = "Un usuario no puede ser propietario y cuidador a la vez: permite a la app comprobar antes de tiempo si esa cuenta ya confirmo un rol."
+    )
+    @GetMapping("/verificar-rol")
+    fun verificarRol(@RequestParam email: String): ResponseEntity<Map<String, Any?>> {
+        val user = userService.findByEmail(email.trim().lowercase()).orElse(null)
+            ?: return ResponseEntity.ok(mapOf("existe" to false, "rol" to null, "rolConfirmado" to false))
+        return ResponseEntity.ok(
+            mapOf(
+                "existe" to true,
+                "rol" to RoleUtil.mapDbRoleToApi(user.rol),
+                "rolConfirmado" to (user.rolConfirmado == true)
+            )
+        )
+    }
+
     @Operation(summary = "Obtener el perfil del usuario autenticado")
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")

@@ -41,6 +41,10 @@ class User {
     @JvmField
     var rol: String? = null
 
+    @Column(name = "rol_confirmado")
+    @JvmField
+    var rolConfirmado: Boolean? = false
+
     @Column(name = "nombre")
     @JvmField
     var nombre: String? = null
