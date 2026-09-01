@@ -8,6 +8,7 @@ package com.petcare.controller
 import com.petcare.model.User
 import com.petcare.service.ActivityService
 import com.petcare.service.AuthService
+import com.petcare.service.GeocodingService
 import com.petcare.service.UserService
 import com.petcare.util.RoleUtil
 import io.swagger.v3.oas.annotations.Operation
@@ -22,7 +23,8 @@ class UsersController(
     private val userService: UserService,
     private val authService: AuthService,
     private val activityService: ActivityService,
-    private val passwordEncoder: org.springframework.security.crypto.password.PasswordEncoder
+    private val passwordEncoder: org.springframework.security.crypto.password.PasswordEncoder,
+    private val geocodingService: GeocodingService
 ) {
 
     @Operation(summary = "Crear un usuario")
@@ -83,6 +85,21 @@ class UsersController(
                 if (rejected != null) return rejected
             }
             if (body.containsKey("is_active")) u.isActive = body["is_active"] as? Boolean
+            if (body.containsKey("latitud") || body.containsKey("longitud")) {
+                u.latitud = (body["latitud"] as? Number)?.toDouble() ?: u.latitud
+                u.longitud = (body["longitud"] as? Number)?.toDouble() ?: u.longitud
+            }
+            if (body.containsKey("direccion_texto")) {
+                val direccion = (body["direccion_texto"] as? String)?.trim()
+                u.direccionTexto = direccion
+                // Si solo llega la direccion de texto (sin coordenadas), se geocodifica con Nominatim.
+                if (!direccion.isNullOrBlank() && (body["latitud"] == null && body["longitud"] == null)) {
+                    geocodingService.geocode(direccion)?.let {
+                        u.latitud = it.latitud
+                        u.longitud = it.longitud
+                    }
+                }
+            }
             val saved = userService.save(u)
             ResponseEntity.ok(saved)
         } catch (ex: Exception) {

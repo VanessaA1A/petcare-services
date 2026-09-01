@@ -640,6 +640,15 @@ ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS rol_confirmado boolean NOT 
 ALTER TABLE public.usuarios ALTER COLUMN rol_confirmado SET DEFAULT false;
 
 --
+-- Ubicacion registrada del usuario, para calcular cercania con solicitudes/ofertas.
+--
+
+ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS latitud double precision;
+ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS longitud double precision;
+ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS direccion_texto text;
+CREATE INDEX IF NOT EXISTS idx_usuarios_ubicacion ON public.usuarios(latitud, longitud);
+
+--
 -- PostgreSQL database dump complete
 --
 

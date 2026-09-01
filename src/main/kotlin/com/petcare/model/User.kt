@@ -45,6 +45,18 @@ class User {
     @JvmField
     var rolConfirmado: Boolean? = false
 
+    @Column(name = "latitud")
+    @JvmField
+    var latitud: Double? = null
+
+    @Column(name = "longitud")
+    @JvmField
+    var longitud: Double? = null
+
+    @Column(name = "direccion_texto")
+    @JvmField
+    var direccionTexto: String? = null
+
     @Column(name = "nombre")
     @JvmField
     var nombre: String? = null
