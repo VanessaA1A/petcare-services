@@ -10,6 +10,7 @@ import com.petcare.model.User
 import com.petcare.security.JwtUtil
 import com.petcare.service.ActivityService
 import com.petcare.service.AuthService
+import com.petcare.service.OtpService
 import com.petcare.service.UserService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -27,8 +28,44 @@ class AuthController(
     private val userService: UserService,
     private val activityService: ActivityService,
     private val jwtUtil: JwtUtil,
-    private val passwordEncoder: PasswordEncoder
+    private val passwordEncoder: PasswordEncoder,
+    private val otpService: OtpService
 ) {
+
+    @Operation(
+        summary = "Enviar codigo de verificacion (OTP) al correo",
+        description = "El codigo vence en 5 minutos. Sin SMTP configurado, el codigo se registra en el log del servidor y tambien se devuelve en la respuesta (modo de prueba)."
+    )
+    @PostMapping("/send-otp")
+    fun sendOtp(@RequestBody body: Map<String, String>): ResponseEntity<*> {
+        val email = body["email"]?.trim()?.lowercase()
+        if (email.isNullOrBlank() || !email.contains("@")) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "Email inválido"))
+        }
+        val otpModoPrueba = otpService.generarYEnviar(email)
+        return ResponseEntity.ok(
+            mapOf(
+                "message" to "Código enviado" + if (otpModoPrueba != null) " (modo de prueba, sin SMTP configurado)" else "",
+                "otp" to otpModoPrueba
+            )
+        )
+    }
+
+    @Operation(summary = "Verificar el codigo OTP enviado a un correo")
+    @PostMapping("/verify-otp")
+    fun verifyOtp(@RequestBody body: Map<String, String>): ResponseEntity<*> {
+        val email = body["email"]?.trim()?.lowercase()
+        val otp = body["otp"]?.trim()
+        if (email.isNullOrBlank() || otp.isNullOrBlank()) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "email y otp son requeridos"))
+        }
+        val verificado = otpService.verificar(email, otp)
+        return if (verificado) {
+            ResponseEntity.ok(mapOf("verified" to true))
+        } else {
+            ResponseEntity.status(400).body(mapOf("verified" to false, "error" to "Código incorrecto o expirado"))
+        }
+    }
 
     @Operation(summary = "Registrar un nuevo usuario", description = "Crea un usuario con email/contraseña y abre una sesión.")
     @PostMapping("/registro")

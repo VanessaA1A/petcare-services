@@ -665,6 +665,20 @@ CREATE INDEX IF NOT EXISTS idx_chat_messages_service_request_id ON public.chat_m
 CREATE INDEX IF NOT EXISTS idx_chat_messages_receiver_id ON public.chat_messages(receiver_id);
 
 --
+-- Verificacion de identidad por OTP (codigo de un solo uso enviado al correo).
+--
+
+CREATE TABLE IF NOT EXISTS public.verificaciones (
+  id serial PRIMARY KEY,
+  email text NOT NULL,
+  otp text NOT NULL,
+  fecha_expiracion timestamptz NOT NULL,
+  usado boolean NOT NULL DEFAULT false,
+  creado_en timestamptz DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_verificaciones_email ON public.verificaciones(email);
+
+--
 -- PostgreSQL database dump complete
 --
 
