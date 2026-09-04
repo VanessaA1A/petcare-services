@@ -12,11 +12,14 @@ import com.petcare.model.User
 import com.petcare.repository.UserRepository
 import com.petcare.service.CancellationNotAllowedException
 import com.petcare.service.MobileServiceRequestService
+import com.petcare.service.NotificationService
 import com.petcare.websocket.WsEvent
 import com.petcare.websocket.WsEventService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
+import org.springframework.stereotype.Component
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -151,19 +154,18 @@ class MobileServiceRequestsController(
 @Tag(name = "Postulaciones", description = "Postulaciones de cuidadores a solicitudes, y ofertas iniciadas por el dueño. Incluyen nombre, teléfono y correo de ambas partes para contacto directo.")
 class MobileServiceApplicationsController(
     private val service: MobileServiceRequestService,
-    private val userRepository: UserRepository,
-    private val wsEventService: WsEventService
+    private val presenter: ServiceApplicationPresenter
 ) {
     @Operation(summary = "Listar las postulaciones de un cuidador")
     @GetMapping("/caregiver/{caregiverId}")
     fun byCaregiver(@PathVariable caregiverId: Int) = ResponseEntity.ok(
-        service.applicationsByCaregiver(caregiverId).map { it.toDtoWithNames() }
+        service.applicationsByCaregiver(caregiverId).map { presenter.toDtoWithNames(it) }
     )
 
     @Operation(summary = "Listar las postulaciones recibidas por un dueño")
     @GetMapping("/owner/{ownerId}")
     fun byOwner(@PathVariable ownerId: Int) = ResponseEntity.ok(
-        service.applicationsByOwner(ownerId).map { it.toDtoWithNames() }
+        service.applicationsByOwner(ownerId).map { presenter.toDtoWithNames(it) }
     )
 
     @Operation(summary = "Crear una postulación", description = "Puede originarse desde el cuidador (se postula) o desde el dueño (acepta una oferta publicada).")
@@ -177,7 +179,7 @@ class MobileServiceApplicationsController(
         }
 
         val saved = service.saveApplication(request.toEntity())
-        val savedDto = saved.toDtoWithNames()
+        val savedDto = presenter.toDtoWithNames(saved)
 
         val serviceRequest = service.findRequest(savedDto.serviceRequestId)
         if (serviceRequest.isPresent) {
@@ -185,17 +187,7 @@ class MobileServiceApplicationsController(
 
             if (ownerId > 0) {
                 // El dueno ve en tiempo real cuando un cuidador se interesa.
-                wsEventService.sendToUser(
-                    ownerId,
-                    WsEvent(
-                        type = "APPLICATION_CREATED",
-                        recipientUserId = ownerId,
-                        title = "Nueva postulación",
-                        message = "Un cuidador se postuló a tu solicitud.",
-                        serviceRequestId = savedDto.serviceRequestId,
-                        applicationId = savedDto.id
-                    )
-                )
+                presenter.notifyOwnerApplicationCreated(ownerId, savedDto)
             }
         }
 
@@ -229,62 +221,69 @@ class MobileServiceApplicationsController(
                 }
             }
 
-            if (saved == null) {
-                return ResponseEntity.status(404)
-                    .body(mapOf("error" to "Service application not found"))
-            }
-
-            val savedDto = saved.toDtoWithNames()
-            val relatedRequest = service.findRequest(savedDto.serviceRequestId)
-
-            if (relatedRequest.isPresent) {
-                val serviceRequest = relatedRequest.get()
-                val ownerId = serviceRequest.ownerId ?: 0
-                val caregiverId = savedDto.caregiverId
-                val status = savedDto.status.uppercase()
-
-                if (ownerId > 0) {
-                    // Ambos lados reciben el cambio para actualizar sus pantallas.
-                    wsEventService.sendToUser(
-                        ownerId,
-                        WsEvent(
-                            type = "APPLICATION_STATUS_UPDATED",
-                            recipientUserId = ownerId,
-                            title = "Postulación actualizada",
-                            message = "Una postulación cambió a $status.",
-                            serviceRequestId = savedDto.serviceRequestId,
-                            applicationId = savedDto.id
-                        )
-                    )
-                }
-
-                if (caregiverId > 0) {
-                    wsEventService.sendToUser(
-                        caregiverId,
-                        WsEvent(
-                            type = "MY_APPLICATION_STATUS_UPDATED",
-                            recipientUserId = caregiverId,
-                            title = "Tu postulación fue actualizada",
-                            message = "Tu postulación cambió a $status.",
-                            serviceRequestId = savedDto.serviceRequestId,
-                            applicationId = savedDto.id
-                        )
-                    )
-                }
-            }
-
-            ResponseEntity.ok(savedDto)
+            presenter.respondWithUpdate(saved)
         } catch (ex: CancellationNotAllowedException) {
             ResponseEntity.badRequest().body(mapOf("error" to ex.message))
         }
     }
+}
 
-    private fun ServiceApplication.toDtoWithNames(): ServiceApplicationDTO {
-        val request = service.findRequest(serviceRequestId ?: -1).orElse(null)
+@RestController
+@RequestMapping("/api/ofertas")
+@Tag(name = "Ofertas", description = "Atajos explícitos para rechazar/cancelar una postulación u oferta, sin duplicar la lógica de transición de estados.")
+class OfertasController(
+    private val service: MobileServiceRequestService,
+    private val presenter: ServiceApplicationPresenter
+) {
+    private val logger = LoggerFactory.getLogger(OfertasController::class.java)
+
+    @Operation(summary = "Rechazar una postulación/oferta", description = "Atajo explícito que delega en la misma lógica que PUT /api/service-applications/{id}/status con REJECTED.")
+    @PostMapping("/{id}/rechazar")
+    fun rechazar(
+        @PathVariable id: Int,
+        @RequestBody(required = false) request: Map<String, String>?
+    ): ResponseEntity<*> {
+        // rejectApplication no soporta motivo hoy; se registra solo para diagnostico.
+        val motivo = request?.get("motivo")
+        if (!motivo.isNullOrBlank()) {
+            logger.info("Rechazo de postulación {} con motivo: {}", id, motivo)
+        }
+        val saved = service.rejectApplication(id)
+        return presenter.respondWithUpdate(saved)
+    }
+
+    @Operation(summary = "Cancelar una postulación/oferta", description = "Atajo explícito que delega en la misma lógica que PUT /api/service-applications/{id}/status con CANCELLED.")
+    @PostMapping("/{id}/cancelar")
+    fun cancelar(
+        @PathVariable id: Int,
+        @RequestBody(required = false) request: Map<String, String>?
+    ): ResponseEntity<*> {
+        return try {
+            val saved = service.cancelApplication(id, request?.get("motivo"))
+            presenter.respondWithUpdate(saved)
+        } catch (ex: CancellationNotAllowedException) {
+            ResponseEntity.badRequest().body(mapOf("error" to ex.message))
+        }
+    }
+}
+
+/**
+ * Construye los DTOs de postulaciones y dispara los avisos (WebSocket + push) compartidos
+ * entre el controlador de postulaciones y el de ofertas, para no duplicar esa lógica.
+ */
+@Component
+class ServiceApplicationPresenter(
+    private val service: MobileServiceRequestService,
+    private val userRepository: UserRepository,
+    private val wsEventService: WsEventService,
+    private val notificationService: NotificationService
+) {
+    fun toDtoWithNames(application: ServiceApplication): ServiceApplicationDTO {
+        val request = service.findRequest(application.serviceRequestId ?: -1).orElse(null)
         val owner = request?.ownerId?.let { userRepository.findById(it).orElse(null) }
-        val caregiver = caregiverId?.let { userRepository.findById(it).orElse(null) }
+        val caregiver = application.caregiverId?.let { userRepository.findById(it).orElse(null) }
         return ServiceApplicationDTO.fromEntity(
-            entity = this,
+            entity = application,
             ownerName = owner?.let { userDisplayName(it) },
             caregiverName = caregiver?.let { userDisplayName(it) },
             ownerPhone = owner?.telefono,
@@ -292,6 +291,84 @@ class MobileServiceApplicationsController(
             caregiverPhone = caregiver?.telefono,
             caregiverEmail = caregiver?.email
         )
+    }
+
+    fun notifyOwnerApplicationCreated(ownerId: Int, savedDto: ServiceApplicationDTO) {
+        wsEventService.sendToUser(
+            ownerId,
+            WsEvent(
+                type = "APPLICATION_CREATED",
+                recipientUserId = ownerId,
+                title = "Nueva postulación",
+                message = "Un cuidador se postuló a tu solicitud.",
+                serviceRequestId = savedDto.serviceRequestId,
+                applicationId = savedDto.id
+            )
+        )
+
+        // Notificacion push: el dueno se entera aunque no tenga la app abierta.
+        notificationService.sendNotificationToUser(
+            ownerId,
+            "Nueva oferta",
+            "Un cuidador respondió tu solicitud."
+        )
+    }
+
+    fun respondWithUpdate(saved: ServiceApplication?): ResponseEntity<*> {
+        if (saved == null) {
+            return ResponseEntity.status(404)
+                .body(mapOf("error" to "Service application not found"))
+        }
+
+        val savedDto = toDtoWithNames(saved)
+        val relatedRequest = service.findRequest(savedDto.serviceRequestId)
+
+        if (relatedRequest.isPresent) {
+            val serviceRequest = relatedRequest.get()
+            val ownerId = serviceRequest.ownerId ?: 0
+            val caregiverId = savedDto.caregiverId
+            val status = savedDto.status.uppercase()
+
+            if (ownerId > 0) {
+                // Ambos lados reciben el cambio para actualizar sus pantallas.
+                wsEventService.sendToUser(
+                    ownerId,
+                    WsEvent(
+                        type = "APPLICATION_STATUS_UPDATED",
+                        recipientUserId = ownerId,
+                        title = "Postulación actualizada",
+                        message = "Una postulación cambió a $status.",
+                        serviceRequestId = savedDto.serviceRequestId,
+                        applicationId = savedDto.id
+                    )
+                )
+            }
+
+            if (caregiverId > 0) {
+                wsEventService.sendToUser(
+                    caregiverId,
+                    WsEvent(
+                        type = "MY_APPLICATION_STATUS_UPDATED",
+                        recipientUserId = caregiverId,
+                        title = "Tu postulación fue actualizada",
+                        message = "Tu postulación cambió a $status.",
+                        serviceRequestId = savedDto.serviceRequestId,
+                        applicationId = savedDto.id
+                    )
+                )
+
+                if (status == "ACCEPTED") {
+                    // Notificacion push: el cuidador se entera de inmediato que su oferta fue aceptada.
+                    notificationService.sendNotificationToUser(
+                        caregiverId,
+                        "Oferta aceptada",
+                        "Tu oferta fue aceptada."
+                    )
+                }
+            }
+        }
+
+        return ResponseEntity.ok(savedDto)
     }
 
     private fun userDisplayName(user: User): String? {
