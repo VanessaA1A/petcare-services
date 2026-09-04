@@ -36,7 +36,7 @@ spring:
             enable: true
 
 jwt:
-  secret: ${JWT_SECRET:ChangeThisSecretKeyToATleast32Chars}
+  secret: ${JWT_SECRET}
   expirationMs: ${JWT_EXPIRATION_MS:604800000}
 
 server:

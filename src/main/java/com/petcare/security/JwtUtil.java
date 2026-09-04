@@ -22,7 +22,14 @@ public class JwtUtil {
 
     public JwtUtil(JwtConfig jwtConfig) {
         this.jwtConfig = jwtConfig;
-        this.secretKey = Keys.hmacShaKeyFor(jwtConfig.getSecret().getBytes());
+        String secret = jwtConfig.getSecret();
+        if (secret == null || secret.trim().length() < 32) {
+            throw new IllegalStateException(
+                "JWT_SECRET no esta configurado o es demasiado corto (minimo 32 caracteres). " +
+                "Define la variable de entorno JWT_SECRET antes de iniciar la aplicacion."
+            );
+        }
+        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes());
     }
 
     public String generateToken(Integer userId, String email) {
