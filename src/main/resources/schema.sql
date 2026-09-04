@@ -24,7 +24,8 @@ CREATE TABLE usuarios (
   last_login timestamptz,
   is_active boolean DEFAULT true,
   reset_token text,
-  reset_token_expires timestamptz
+  reset_token_expires timestamptz,
+  fcm_token text
 );
 
 CREATE TABLE sesiones (

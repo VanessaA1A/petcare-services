@@ -11,6 +11,7 @@ import com.petcare.exception.StorageException
 import com.petcare.exception.UserNotFoundException
 import com.petcare.model.User
 import com.petcare.service.FileStorageService
+import com.petcare.service.NotificationService
 import com.petcare.service.UserService
 import com.petcare.util.RoleUtil
 import io.swagger.v3.oas.annotations.Operation
@@ -33,7 +34,8 @@ import java.nio.file.Path
 @Tag(name = "Perfil de usuario", description = "Perfil del usuario autenticado (JWT): datos, foto de perfil")
 class UsuarioProfileController(
     private val userService: UserService,
-    private val fileStorageService: FileStorageService
+    private val fileStorageService: FileStorageService,
+    private val notificationService: NotificationService
 ) {
 
     @Operation(
@@ -75,6 +77,22 @@ class UsuarioProfileController(
         user.telefono = request.telefono ?: user.telefono
         val saved = userService.save(user)
         return ResponseEntity.ok(UserProfileResponse.fromUser(saved))
+    }
+
+    @Operation(
+        summary = "Registrar/actualizar el token FCM de un usuario",
+        description = "Guarda el token de Firebase Cloud Messaging del dispositivo para habilitar notificaciones push. Recibe el id de usuario explicito en el body, igual que el resto de endpoints que consume la app movil (que no envia cabecera Authorization)."
+    )
+    @PostMapping("/fcm-token")
+    fun registerFcmToken(@RequestBody request: Map<String, String?>): ResponseEntity<Any> {
+        val usuarioId = (request["usuario_id"] ?: request["usuarioId"])?.toIntOrNull()
+            ?: return ResponseEntity.badRequest().body(mapOf("error" to "usuario_id is required"))
+        val token = request["token"]?.trim()
+        if (token.isNullOrBlank()) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "token is required"))
+        }
+        notificationService.saveFcmToken(usuarioId, token)
+        return ResponseEntity.noContent().build()
     }
 
     @Operation(summary = "Subir/reemplazar la foto de perfil del usuario autenticado")

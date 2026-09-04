@@ -129,6 +129,12 @@ class User {
     @JvmField
     var bloqueadoHasta: OffsetDateTime? = null
 
+    @get:JsonIgnore
+    @field:JsonIgnore
+    @Column(name = "fcm_token")
+    @JvmField
+    var fcmToken: String? = null
+
     @PrePersist
     fun prePersist() {
         if (createdAt == null) createdAt = OffsetDateTime.now()

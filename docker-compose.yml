@@ -12,6 +12,12 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./database/petcare_restore.sql:/docker-entrypoint-initdb.d/petcare_restore.sql:ro
+      - ./migrations/002_add_rol_confirmado.sql:/docker-entrypoint-initdb.d/z02_migration.sql:ro
+      - ./migrations/003_add_ubicacion_usuarios.sql:/docker-entrypoint-initdb.d/z03_migration.sql:ro
+      - ./migrations/004_add_chat_messages.sql:/docker-entrypoint-initdb.d/z04_migration.sql:ro
+      - ./migrations/005_add_verificaciones.sql:/docker-entrypoint-initdb.d/z05_migration.sql:ro
+      - ./migrations/006_play_store_ready_updates.sql:/docker-entrypoint-initdb.d/z06_migration.sql:ro
+      - ./migrations/007_add_fcm_token.sql:/docker-entrypoint-initdb.d/z07_migration.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_NAME:-PetCareBD}"]
       interval: 5s
