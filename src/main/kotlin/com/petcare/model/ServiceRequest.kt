@@ -57,7 +57,13 @@ data class ServiceRequest(
     var createdAt: OffsetDateTime? = null,
 
     @Column(name = "updated_at")
-    var updatedAt: OffsetDateTime? = null
+    var updatedAt: OffsetDateTime? = null,
+
+    @Column(name = "motivo_cancelacion")
+    var motivoCancelacion: String? = null,
+
+    @Column(name = "fecha_expiracion")
+    var fechaExpiracion: OffsetDateTime? = null
 ) {
     @PrePersist
     fun prePersist() {

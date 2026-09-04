@@ -37,7 +37,10 @@ data class Rating(
     var comment: String? = null,
 
     @Column(name = "created_at")
-    var createdAt: OffsetDateTime? = null
+    var createdAt: OffsetDateTime? = null,
+
+    @Column(name = "respuesta_calificacion", columnDefinition = "text")
+    var respuestaCalificacion: String? = null
 ) {
     @PrePersist
     fun prePersist() {

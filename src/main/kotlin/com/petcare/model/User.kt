@@ -111,9 +111,28 @@ class User {
     @JvmField
     var resetTokenExpires: OffsetDateTime? = null
 
+    @Column(name = "two_factor_enabled")
+    @JvmField
+    var twoFactorEnabled: Boolean? = false
+
+    @get:JsonIgnore
+    @field:JsonIgnore
+    @Column(name = "two_factor_secret")
+    @JvmField
+    var twoFactorSecret: String? = null
+
+    @Column(name = "fecha_ultimo_cambio_password")
+    @JvmField
+    var fechaUltimoCambioPassword: OffsetDateTime? = null
+
+    @Column(name = "bloqueado_hasta")
+    @JvmField
+    var bloqueadoHasta: OffsetDateTime? = null
+
     @PrePersist
     fun prePersist() {
         if (createdAt == null) createdAt = OffsetDateTime.now()
         if (isActive == null) isActive = true
+        if (twoFactorEnabled == null) twoFactorEnabled = false
     }
 }

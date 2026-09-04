@@ -12,12 +12,16 @@ import com.petcare.repository.ServiceApplicationRepository
 import com.petcare.repository.ServiceRequestRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.OffsetDateTime
+import jakarta.persistence.EntityManager
+import jakarta.persistence.criteria.Predicate
 
 @Service
 class MobileServiceRequestService(
     private val requestRepository: ServiceRequestRepository,
     private val applicationRepository: ServiceApplicationRepository,
-    private val offeredServiceRepository: OfferedServiceRepository
+    private val offeredServiceRepository: OfferedServiceRepository,
+    private val entityManager: EntityManager
 ) {
     fun byOwner(ownerId: Int) = requestRepository.findByOwnerIdOrderByCreatedAtDesc(ownerId)
     fun available() = requestRepository.findByStatusIgnoreCaseAndSourceTypeIgnoreCaseOrderByCreatedAtDesc("PENDING", "OPEN")
@@ -26,7 +30,6 @@ class MobileServiceRequestService(
 
     @Transactional
     fun createRequest(request: ServiceRequest): ServiceRequest {
-        // Normalizamos estado y origen para que Android y PostgreSQL manejen los mismos valores.
         if ((request.id ?: 0) <= 0) request.id = generateRequestId()
         request.status = request.status.ifBlank { "PENDING" }.uppercase()
         request.sourceType = request.sourceType.ifBlank { "OPEN" }.uppercase()
@@ -36,9 +39,28 @@ class MobileServiceRequestService(
         return saved
     }
 
+    @Transactional
+    fun updateRequest(id: Int, update: ServiceRequest): ServiceRequest? {
+        val existing = requestRepository.findById(id).orElse(null) ?: return null
+        if (existing.status != "PENDING") {
+            throw IllegalStateException("Solo se pueden editar solicitudes en estado PENDING")
+        }
+        
+        existing.title = update.title ?: existing.title
+        existing.description = update.description ?: existing.description
+        existing.requestedDate = update.requestedDate ?: existing.requestedDate
+        existing.startTime = update.startTime ?: existing.startTime
+        existing.endTime = update.endTime ?: existing.endTime
+        existing.petId = update.petId ?: existing.petId
+        existing.petIds = update.petIds ?: existing.petIds
+        existing.serviceTypeId = update.serviceTypeId ?: existing.serviceTypeId
+        existing.latitude = update.latitude ?: existing.latitude
+        existing.longitude = update.longitude ?: existing.longitude
+        
+        return requestRepository.save(existing)
+    }
 
     private fun createOwnerInitiatedApplicationIfNeeded(request: ServiceRequest) {
-        // Si el dueno solicita una oferta concreta, se crea una postulacion iniciada por OWNER.
         if (request.sourceType != "OFFER") return
         val requestId = request.id ?: return
         val offeredServiceId = request.offeredServiceId ?: return
@@ -86,7 +108,6 @@ class MobileServiceRequestService(
 
     @Transactional
     fun acceptApplication(id: Int): ServiceApplication? {
-        // Aceptar una postulacion toma la solicitud y rechaza las demas pendientes.
         val application = applicationRepository.findById(id).orElse(null) ?: return null
         if (application.status != "PENDING") return null
 
@@ -115,7 +136,6 @@ class MobileServiceRequestService(
 
     @Transactional
     fun markDoneByCaregiver(id: Int): ServiceApplication? {
-        // El cuidador solo marca realizado; el cierre final lo confirma el dueno.
         val application = applicationRepository.findById(id).orElse(null) ?: return null
         if (application.status != "ACCEPTED") return null
 
@@ -130,29 +150,35 @@ class MobileServiceRequestService(
         return saved
     }
 
-    fun cancelApplication(id: Int): ServiceApplication? {
-        // La regla de cancelacion vive aqui para que todos los endpoints la respeten.
+    @Transactional
+    fun cancelApplication(id: Int, reason: String? = null): ServiceApplication? {
         val application = applicationRepository.findById(id).orElse(null) ?: return null
+        
+        if (application.status == "PENDING") {
+            application.status = "CANCELLED"
+            return applicationRepository.save(application)
+        }
+
         if (application.status != "ACCEPTED") {
-            throw CancellationNotAllowedException("Solo se pueden cancelar servicios confirmados.")
+            throw CancellationNotAllowedException("Solo se pueden cancelar servicios pendientes o aceptados.")
         }
 
         val request = requestRepository.findById(application.serviceRequestId ?: -1).orElse(null)
             ?: throw CancellationNotAllowedException("No se encontró la solicitud asociada.")
 
         if (!ServiceDateTimeParser.canCancelBeforeStart(request)) {
-            throw CancellationNotAllowedException()
+            throw CancellationNotAllowedException("No se puede cancelar tan cerca de la hora de inicio.")
         }
 
         application.status = "CANCELLED"
         val saved = applicationRepository.save(application)
         request.status = "CANCELLED"
+        request.motivoCancelacion = reason
         requestRepository.save(request)
         return saved
     }
 
     fun completeApplication(id: Int): ServiceApplication? {
-        // COMPLETED es el estado final que envia el servicio al historial.
         val application = applicationRepository.findById(id).orElse(null) ?: return null
         if (application.status != "ACCEPTED" && application.status != "DONE_BY_CAREGIVER") return null
 
@@ -163,5 +189,72 @@ class MobileServiceRequestService(
             requestRepository.save(request)
         }
         return saved
+    }
+
+    @Transactional
+    fun extendRequest(id: Int): ServiceRequest? {
+        val request = requestRepository.findById(id).orElse(null) ?: return null
+        if (request.status != "PENDING") return null
+        
+        val baseDate = request.fechaExpiracion ?: OffsetDateTime.now()
+        request.fechaExpiracion = baseDate.plusHours(24)
+        return requestRepository.save(request)
+    }
+
+    @Transactional
+    fun reassignRequest(id: Int): ServiceRequest? {
+        val request = requestRepository.findById(id).orElse(null) ?: return null
+        if (request.status != "CANCELLED" && request.status != "ACCEPTED") return null
+        
+        request.status = "PENDING"
+        requestRepository.save(request)
+        
+        applicationRepository.findByServiceRequestIdOrderByCreatedAtDesc(id)
+            .filter { it.status == "ACCEPTED" }
+            .forEach { applicationRepository.save(it.copy(status = "CANCELLED")) }
+            
+        return request
+    }
+
+    fun getHistory(userId: Int, role: String): List<ServiceRequest> {
+        return if (role.uppercase() == "OWNER") {
+            requestRepository.findByOwnerIdOrderByCreatedAtDesc(userId)
+                .filter { it.status == "COMPLETED" || it.status == "CANCELLED" }
+        } else {
+            val requestIds = applicationRepository.findByCaregiverIdOrderByCreatedAtDesc(userId)
+                .filter { it.status == "COMPLETED" || it.status == "CANCELLED" }
+                .mapNotNull { it.serviceRequestId }
+            requestRepository.findAllById(requestIds).sortedByDescending { it.createdAt }
+        }
+    }
+
+    fun searchRequests(query: String?, serviceTypeId: Int?, status: String?): List<ServiceRequest> {
+        val cb = entityManager.criteriaBuilder
+        val cq = cb.createQuery(ServiceRequest::class.java)
+        val root = cq.from(ServiceRequest::class.java)
+        val predicates = mutableListOf<Predicate>()
+
+        if (!query.isNullOrBlank()) {
+            val q = "%${query.lowercase()}%"
+            predicates.add(cb.or(
+                cb.like(cb.lower(root.get("title")), q),
+                cb.like(cb.lower(root.get("description")), q)
+            ))
+        }
+
+        if (serviceTypeId != null && serviceTypeId > 0) {
+            predicates.add(cb.equal(root.get<Int>("serviceTypeId"), serviceTypeId))
+        }
+
+        if (!status.isNullOrBlank()) {
+            predicates.add(cb.equal(cb.upper(root.get("status")), status.uppercase()))
+        } else {
+            predicates.add(cb.equal(root.get<String>("status"), "PENDING"))
+        }
+
+        cq.where(*predicates.toTypedArray())
+        cq.orderBy(cb.desc(root.get<OffsetDateTime>("createdAt")))
+
+        return entityManager.createQuery(cq).resultList
     }
 }
