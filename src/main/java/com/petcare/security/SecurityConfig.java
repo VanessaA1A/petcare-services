@@ -56,6 +56,7 @@ public class SecurityConfig {
                     .requestMatchers("/api/busquedas-guardadas/**").permitAll()
                     .requestMatchers("/api/usuarios/verificar-rol").permitAll()
                     .requestMatchers("/api/usuarios/fcm-token").permitAll()
+                    .requestMatchers("/api/usuarios/no-molestar").permitAll()
                     .requestMatchers("/api/usuarios/{id}/foto").permitAll()
                     .requestMatchers("/static/**").permitAll()
                     .requestMatchers("/api/usuarios/me/**").authenticated()

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>PetCare WebSocket Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 32px;
+            background: #f5f5f5;
+        }
+
+        button {
+            padding: 12px 18px;
+            margin-right: 8px;
+            border: 0;
+            border-radius: 8px;
+            background: #2f80ed;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        input {
+            padding: 12px;
+            width: 80px;
+            margin-right: 8px;
+        }
+
+        #log {
+            margin-top: 24px;
+            padding: 16px;
+            background: white;
+            border-radius: 8px;
+            min-height: 240px;
+            white-space: pre-wrap;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+<h1>PetCare WebSocket Test</h1>
+
+<label>User ID:</label>
+<input id="userId" value="1" />
+
+<button onclick="connect()">Conectar</button>
+<button onclick="sendMessage()">Enviar prueba</button>
+<button onclick="disconnect()">Desconectar</button>
+
+<div id="log"></div>
+
+<script>
+    let ws = null;
+
+    function log(message) {
+        const box = document.getElementById("log");
+        box.textContent += message + "\n";
+    }
+
+    function connect() {
+        const userId = document.getElementById("userId").value;
+        const url = `ws://localhost:8080/ws/petcare?userId=${userId}`;
+
+        log("Conectando a " + url);
+
+        ws = new WebSocket(url);
+
+        ws.onopen = () => {
+            log("✅ WebSocket abierto");
+        };
+
+        ws.onmessage = (event) => {
+            log("📩 Recibido: " + event.data);
+        };
+
+        ws.onerror = () => {
+            log("❌ Error WebSocket");
+        };
+
+        ws.onclose = (event) => {
+            log("🔌 Cerrado: " + event.code + " " + event.reason);
+        };
+    }
+
+    function sendMessage() {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            log("⚠️ WebSocket no está conectado");
+            return;
+        }
+
+        ws.send("hola desde ws-test.html");
+        log("📤 Mensaje enviado");
+    }
+
+    function disconnect() {
+        if (ws) {
+            ws.close();
+        }
+    }
+</script>
+</body>
+</html>

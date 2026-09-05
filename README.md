@@ -45,6 +45,12 @@ docker compose up --build
 3. La API queda en `http://localhost:8080`, pgAdmin en `http://localhost:5050`.
 4. La base de datos se inicializa automáticamente con `database/petcare_restore.sql` (esquema + datos de prueba) en el primer arranque del contenedor `db`.
 
+## Pruebas
+```powershell
+./gradlew test
+```
+Genera un reporte de cobertura con JaCoCo en `build/reports/jacoco/test/html/index.html`.
+
 ## Documentación de la API (Swagger)
 Con el backend corriendo (local o en Docker), la documentación interactiva está disponible en:
 - `http://localhost:8080/swagger-ui.html`
