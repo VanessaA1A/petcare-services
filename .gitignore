@@ -4,6 +4,15 @@ node_modules/
 .gradle/
 /build/
 
+# IDE & local
+.idea/
+.vscode/
+*.iml
+local.properties
+
+# Gradle/Kotlin caches
+/bin/
+
 # Credenciales de Firebase Admin SDK (nunca deben commitearse)
 firebase-service-account.json
 src/main/resources/firebase-service-account.json
