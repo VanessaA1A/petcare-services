@@ -11,22 +11,43 @@ Este repositorio ahora contiene un backend completo en Kotlin con Spring Boot.
 - `migrations/schema.sql`: esquema de base de datos
 
 ## Endpoints principales
-- `POST /api/auth/login`
-- `POST /api/auth/recover`
-- `GET /profile`
-- `POST /api/users`
-- `GET /api/users`
-- `GET /api/users/{id}`
-- `PUT /api/users/{id}`
-- `DELETE /api/users/{id}`
-- `POST /api/users/{id}/roles`
-- `GET /api/pets/owner/{owner_id}`
-- `GET /api/pets/{id}`
-- `POST /api/pets`
-- `POST /api/pets/bulk`
-- `PUT /api/pets/{id}`
-- `DELETE /api/pets/{id}`
-- `GET /api/pets/all`
+
+La lista completa y siempre actualizada está en Swagger (`/swagger-ui.html`) — esta sección
+agrupa las áreas principales por funcionalidad.
+
+**Auth y usuarios**
+- `POST /api/auth/registro`, `POST /api/auth/login`, `POST /api/auth/recover`, `GET /api/auth/me`
+- `POST /api/auth/send-otp`, `POST /api/auth/verify-otp`
+- `GET/PUT/DELETE /api/users/{id}`, `POST /api/users/{id}/roles`
+- `GET/POST/PUT/DELETE /api/usuarios/...` (perfil, foto de perfil, `GET /api/usuarios/{id}/badge`)
+
+**Mascotas**
+- `GET/POST/PUT/DELETE /api/pets/...`
+- `GET/POST/PUT/DELETE /api/pets/{id}/expediente`, `/api/pets/expediente/{entradaId}` — expediente médico (Bloque 11)
+
+**Solicitudes y servicios ofrecidos**
+- `GET/POST/PUT /api/service-requests/...`, `/api/solicitudes/...` (edición, extensión, reasignación, historial, búsqueda)
+- `GET/POST/PUT/DELETE /api/offered-services/...`
+- `POST/GET /api/solicitudes/{id}/ubicacion` — ubicación en vivo (taxi/paseo)
+- `POST /api/solicitudes/{id}/valorar-durante` — reacción rápida en tiempo real (Bloque 3)
+- `POST /api/solicitudes/{id}/evidencia`, `GET /api/solicitudes/{id}/evidencias` — foto antes/después (Bloque 8)
+
+**Chat**
+- `POST /api/chat/mensajes`, `GET /api/chat/mensajes/{serviceRequestId}`, `PUT /api/chat/mensajes/leidos`
+- `POST /api/chat/{serviceRequestId}/imagen`, `GET /api/chat/{serviceRequestId}/imagenes` — chat con fotos (Bloque 3)
+
+**Calificaciones y emergencias**
+- `GET/POST /api/ratings/...`
+- `POST/GET /api/emergencias` — botón de emergencia (Bloque 3)
+
+**Geolocalización**
+- `GET /api/geo/geocode`, `/api/geo/solicitudes-cercanas`, `/api/geo/ofertas-cercanas`, `/api/geo/cuidadores-cercanos`
+
+**Calendario**
+- `GET /api/calendario?usuario_id=&mes=&anio=` — servicios programados del usuario (Bloque 9)
+
+**Mascota perdida**
+- `POST /api/alertas-perdida`, `POST /api/alertas-perdida/{id}/avistamiento`, `GET /api/alertas-perdida/{id}/avistamientos`, `PUT /api/alertas-perdida/{id}/encontrada`, `GET /api/alertas-perdida/cercanas` (Bloque 12)
 
 ## Ejecutar el proyecto
 1. Configura tu base de datos PostgreSQL.
