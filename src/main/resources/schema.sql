@@ -1,5 +1,6 @@
 -- PetCare Services schema init
 
+DROP TABLE IF EXISTS expediente_medico CASCADE;
 DROP TABLE IF EXISTS evidencias_servicio CASCADE;
 DROP TABLE IF EXISTS valoraciones_tiempo_real CASCADE;
 DROP TABLE IF EXISTS emergencias CASCADE;
@@ -274,3 +275,21 @@ CREATE TABLE evidencias_servicio (
 );
 
 CREATE INDEX IF NOT EXISTS idx_evidencias_servicio_solicitud_id ON evidencias_servicio(solicitud_id);
+
+-- Bloque 11: expediente medico de la mascota (solo lectura para el cuidador durante un servicio activo).
+CREATE TABLE expediente_medico (
+  id serial PRIMARY KEY,
+  pets_id integer REFERENCES pets(id) ON DELETE CASCADE,
+  tipo varchar(30) NOT NULL CHECK (tipo IN ('VACUNA', 'DESPARASITACION', 'ALERGIA', 'MEDICAMENTO', 'CIRUGIA', 'PESO', 'NOTA')),
+  titulo varchar(200) NOT NULL,
+  descripcion text,
+  fecha date NOT NULL,
+  fecha_proxima date,
+  veterinario_nombre varchar(150),
+  veterinario_telefono varchar(20),
+  imagen_carnet_url text,
+  fecha_creacion timestamp DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_expediente_medico_pets_id ON expediente_medico(pets_id);
+CREATE INDEX IF NOT EXISTS idx_expediente_medico_fecha_proxima ON expediente_medico(fecha_proxima);
