@@ -28,13 +28,11 @@ class User {
     @JvmField
     var email: String? = null
 
-    @get:JsonIgnore
     @field:JsonIgnore
     @Column(name = "password_hash", nullable = false)
     @JvmField
     var passwordHash: String? = null
 
-    @get:JsonIgnore
     @field:JsonIgnore
     @Column(name = "rol", columnDefinition = "rol_usuario")
     @ColumnTransformer(write = "?::rol_usuario")
@@ -69,7 +67,6 @@ class User {
     @JvmField
     var telefono: String? = null
 
-    @get:JsonIgnore
     @field:JsonIgnore
     @Column(name = "foto_perfil_filename")
     @JvmField
@@ -99,13 +96,11 @@ class User {
     @JvmField
     var isActive: Boolean? = true
 
-    @get:JsonIgnore
     @field:JsonIgnore
     @Column(name = "reset_token")
     @JvmField
     var resetToken: String? = null
 
-    @get:JsonIgnore
     @field:JsonIgnore
     @Column(name = "reset_token_expires")
     @JvmField
@@ -115,7 +110,6 @@ class User {
     @JvmField
     var twoFactorEnabled: Boolean? = false
 
-    @get:JsonIgnore
     @field:JsonIgnore
     @Column(name = "two_factor_secret")
     @JvmField
@@ -129,7 +123,6 @@ class User {
     @JvmField
     var bloqueadoHasta: OffsetDateTime? = null
 
-    @get:JsonIgnore
     @field:JsonIgnore
     @Column(name = "fcm_token")
     @JvmField

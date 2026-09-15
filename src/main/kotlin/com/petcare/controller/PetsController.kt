@@ -61,6 +61,9 @@ class PetsController(private val petService: PetService) {
             ?: return ResponseEntity.badRequest().body(mapOf("error" to "owner_id and pets are required"))
         val petsObj = body["pets"] ?: return ResponseEntity.badRequest().body(mapOf("error" to "owner_id and pets are required"))
         return try {
+            // Jackson deserializes a JSON array of objects as List<LinkedHashMap<String, Any>>,
+            // so this cast is safe at runtime despite type erasure.
+            @Suppress("UNCHECKED_CAST")
             val petMaps = petsObj as List<Map<String, Any>>
             val pets = petMaps.map { pm ->
                 val p = Pet()
