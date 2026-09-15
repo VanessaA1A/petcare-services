@@ -9,7 +9,8 @@ Esta carpeta contiene el respaldo portable para que otra computadora pueda levan
 3. Ejecutar `database/00_create_database.sql`. Si `PetCareBD` ya existe, omitir este paso.
 4. Cambiarse a la base `PetCareBD`.
 5. Abrir y ejecutar `database/petcare_restore.sql`.
-6. Ejecutar la API.
+6. Ejecutar en orden los archivos `migrations/002_*.sql` a `migrations/008_*.sql` (o el numero mas alto disponible). El respaldo no siempre incluye los cambios incrementales mas recientes, y la API arranca con `ddl-auto: validate`, asi que si falta alguna tabla o columna la aplicacion no arrancara.
+7. Ejecutar la API.
 
 ## Opcion con terminal
 
@@ -18,7 +19,12 @@ Desde la raiz del repo:
 ```powershell
 psql -U postgres -d postgres -f database/00_create_database.sql
 psql -U postgres -d PetCareBD -f database/petcare_restore.sql
+Get-ChildItem migrations/0*.sql | Sort-Object Name | ForEach-Object {
+    psql -U postgres -d PetCareBD -f $_.FullName
+}
 ```
+
+Esto es exactamente lo que hace `docker-compose.yml`: monta `petcare_restore.sql` y cada `migrations/0NN_*.sql` como scripts de `docker-entrypoint-initdb.d`, en ese orden.
 
 Si PostgreSQL pide otra clave, no hay que cambiar el codigo. Se puede configurar la API con variables de entorno:
 
