@@ -12,6 +12,7 @@ import com.petcare.repository.UserRepository
 import com.petcare.util.HashUtil
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
+import java.time.OffsetDateTime
 import java.util.Optional
 import java.util.UUID
 
@@ -54,4 +55,13 @@ class AuthService(
     }
 
     fun findSessionByToken(token: String) = sessionRepository.findActiveByTokenSesion(token)
+
+    /** Cierra una sesion explicitamente (logout). Devuelve true si se encontro y cerro la sesion. */
+    fun logout(token: String): Boolean {
+        val session = sessionRepository.findActiveByTokenSesion(token).orElse(null) ?: return false
+        session.fechaFin = OffsetDateTime.now()
+        session.logoutExplicito = true
+        sessionRepository.save(session)
+        return true
+    }
 }

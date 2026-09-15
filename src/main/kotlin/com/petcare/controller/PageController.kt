@@ -22,4 +22,7 @@ class PageController {
 
     @GetMapping("/admin/dashboard")
     fun adminDashboard(): String = "admin-dashboard"
+
+    @GetMapping("/admin/login")
+    fun adminLogin(): String = "admin-login"
 }

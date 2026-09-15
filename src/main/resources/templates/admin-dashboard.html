@@ -63,8 +63,9 @@
     </style>
 </head>
 <body>
-<header>
+<header style="display:flex;align-items:center;justify-content:space-between;">
     <h1>🐾 PetCare · Panel de administración</h1>
+    <button id="logoutBtn" style="background:transparent;border:1px solid #fff;color:#fff;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;">Cerrar sesión</button>
 </header>
 <main>
     <p id="loadingMsg">Cargando métricas...</p>
@@ -99,12 +100,37 @@
 </main>
 
 <script th:inline="javascript">
+    // Bloque 13: el dashboard ahora exige login de administrador (token en sessionStorage,
+    // ver admin-login.html). Sin token, o si el backend responde 401 (token invalido/vencido,
+    // o la cuenta ya no es administrador), se redirige al login.
+    const adminToken = sessionStorage.getItem('petcare_admin_token');
+    if (!adminToken) {
+        window.location.href = '/admin/login';
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', async function () {
+        try {
+            await fetch('/api/admin/auth/logout', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + adminToken }
+            });
+        } catch (e) { /* la sesion local se limpia igual */ }
+        sessionStorage.removeItem('petcare_admin_token');
+        window.location.href = '/admin/login';
+    });
+
     async function cargarDashboard() {
         try {
+            const authHeaders = { 'Authorization': 'Bearer ' + adminToken };
             const [statsRes, activityRes] = await Promise.all([
-                fetch('/api/admin/dashboard/stats'),
-                fetch('/api/admin/dashboard/activity?dias=7')
+                fetch('/api/admin/dashboard/stats', { headers: authHeaders }),
+                fetch('/api/admin/dashboard/activity?dias=7', { headers: authHeaders })
             ]);
+            if (statsRes.status === 401 || activityRes.status === 401) {
+                sessionStorage.removeItem('petcare_admin_token');
+                window.location.href = '/admin/login';
+                return;
+            }
             const stats = await statsRes.json();
             const activity = await activityRes.json();
 
