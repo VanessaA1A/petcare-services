@@ -39,6 +39,21 @@ class ChatService(
         val pendientes = repository.findByServiceRequestIdAndReceiverIdAndIsReadFalse(serviceRequestId, receiverId)
         pendientes.forEach { it.isRead = true }
         repository.saveAll(pendientes)
+
+        // Avisa en tiempo real a cada remitente de los mensajes que se acaban de marcar como
+        // leídos, para que su chat abierto actualice el check de "visto" sin esperar a refrescar.
+        pendientes.mapNotNull { it.senderId }.distinct().forEach { senderId ->
+            wsEventService.sendToUser(
+                senderId,
+                WsEvent(
+                    type = "MESSAGE_READ",
+                    recipientUserId = senderId,
+                    title = "Mensajes leídos",
+                    message = "Tus mensajes fueron leídos",
+                    serviceRequestId = serviceRequestId
+                )
+            )
+        }
     }
 
     fun noLeidos(userId: Int): Int = repository.countByReceiverIdAndIsReadFalse(userId)
