@@ -19,12 +19,13 @@ class RatingServiceTest {
 
     private val ratingRepository = mock<RatingRepository>()
     private val requestRepository = mock<ServiceRequestRepository>()
+    private val badgeService = mock<BadgeService>()
     private lateinit var ratingService: RatingService
 
     @BeforeEach
     fun setUp() {
         whenever(ratingRepository.save(any())) doAnswer { it.arguments[0] as Rating }
-        ratingService = RatingService(ratingRepository, requestRepository)
+        ratingService = RatingService(ratingRepository, requestRepository, badgeService)
     }
 
     private fun requestWithStatus(status: String) = ServiceRequest(id = 1, status = status)

@@ -16,7 +16,8 @@ data class UserProfileResponse(
     @Schema(example = "Maria") val nombre: String?,
     @Schema(example = "Propietaria") val apellido: String?,
     @Schema(example = "+505 8888 1111") val telefono: String?,
-    @Schema(example = "https://cdn.petcare.local/perfiles/17.jpg") val fotoPerfilUrl: String?
+    @Schema(example = "https://cdn.petcare.local/perfiles/17.jpg") val fotoPerfilUrl: String?,
+    @Schema(example = "CONFIABLE", description = "NUEVO, EN_CRECIMIENTO, CONFIABLE, EXPERIMENTADO, ELITE o EN_OBSERVACION") val badge: String?
 ) {
     companion object {
         fun fromUser(user: User): UserProfileResponse {
@@ -28,7 +29,8 @@ data class UserProfileResponse(
                 nombre = user.nombre,
                 apellido = user.apellido,
                 telefono = user.telefono,
-                fotoPerfilUrl = user.fotoPerfilUrl
+                fotoPerfilUrl = user.fotoPerfilUrl,
+                badge = user.badge
             )
         }
     }

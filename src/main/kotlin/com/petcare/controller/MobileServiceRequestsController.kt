@@ -29,7 +29,8 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Solicitudes de servicio", description = "Solicitudes publicadas por los dueños de mascotas")
 class MobileServiceRequestsController(
     private val service: MobileServiceRequestService,
-    private val wsEventService: WsEventService
+    private val wsEventService: WsEventService,
+    private val userRepository: UserRepository
 ) {
     @Operation(summary = "Listar las solicitudes de un dueño")
     @ApiResponses(value = [
@@ -46,10 +47,14 @@ class MobileServiceRequestsController(
         ApiResponse(responseCode = "200", description = "Lista de solicitudes abiertas")
     ])
     @GetMapping("/available")
-    fun available() = ResponseEntity.ok(
+    fun available(): ResponseEntity<*> {
         // Solo se publican solicitudes abiertas y pendientes para cuidadores.
-        service.available().map { ServiceRequestDTO.fromEntity(it) }
-    )
+        val items = service.available()
+        // Trae el badge de varios duenos de una sola consulta, para no hacer N+1.
+        val badges = userRepository.findAllById(items.map { it.ownerId ?: 0 }.distinct())
+            .associate { (it.id ?: 0) to it.badge }
+        return ResponseEntity.ok(items.map { ServiceRequestDTO.fromEntity(it, badges[it.ownerId]) })
+    }
 
     @Operation(summary = "Obtener una solicitud de servicio por id")
     @ApiResponses(value = [
@@ -337,7 +342,9 @@ class ServiceApplicationPresenter(
             ownerPhone = owner?.telefono,
             ownerEmail = owner?.email,
             caregiverPhone = caregiver?.telefono,
-            caregiverEmail = caregiver?.email
+            caregiverEmail = caregiver?.email,
+            ownerBadge = owner?.badge,
+            caregiverBadge = caregiver?.badge
         )
     }
 

@@ -13,7 +13,8 @@ import org.springframework.stereotype.Service
 @Service
 class RatingService(
     private val repository: RatingRepository,
-    private val requestRepository: ServiceRequestRepository
+    private val requestRepository: ServiceRequestRepository,
+    private val badgeService: BadgeService
 ) {
     fun save(rating: Rating): Rating {
         // Se valida la solicitud para evitar calificaciones sobre servicios inexistentes.
@@ -29,7 +30,14 @@ class RatingService(
             rating.ratedByRole
         )
         // Si el mismo rol vuelve a calificar, se actualiza en vez de duplicar.
-        return repository.save(rating.copy(id = existing?.id ?: rating.id))
+        val saved = repository.save(rating.copy(id = existing?.id ?: rating.id))
+
+        // La calificacion nueva cambia el promedio de quien la recibe: recalculamos su badge.
+        // ratedByRole = OWNER -> calificaron al cuidador; ratedByRole = CAREGIVER -> calificaron al dueno.
+        val recipientId = if (saved.ratedByRole == "OWNER") saved.caregiverId else saved.ownerId
+        recipientId?.let { badgeService.actualizarBadge(it) }
+
+        return saved
     }
 
     fun caregiverSummary(caregiverId: Int): Pair<Double, Int> {

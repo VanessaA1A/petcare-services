@@ -6,6 +6,7 @@ package com.petcare.controller
  */
 
 import com.petcare.dto.OfferedServiceDTO
+import com.petcare.repository.UserRepository
 import com.petcare.service.OfferedServiceService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -17,7 +18,14 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/offered-services")
 @Tag(name = "Servicios ofrecidos", description = "Servicios que un cuidador publica para que los dueños los soliciten")
-class OfferedServicesController(private val service: OfferedServiceService) {
+class OfferedServicesController(
+    private val service: OfferedServiceService,
+    private val userRepository: UserRepository
+) {
+    // Trae el badge de varios cuidadores de una sola consulta, para no hacer N+1 en los listados.
+    private fun badgesFor(caregiverIds: Collection<Int>): Map<Int, String?> =
+        userRepository.findAllById(caregiverIds.distinct()).associate { (it.id ?: 0) to it.badge }
+
     @Operation(summary = "Listar servicios ofrecidos por un cuidador")
     @ApiResponses(value = [
         ApiResponse(responseCode = "200", description = "Lista de servicios ofrecidos por el cuidador")
@@ -32,9 +40,11 @@ class OfferedServicesController(private val service: OfferedServiceService) {
         ApiResponse(responseCode = "200", description = "Lista de servicios ofrecidos disponibles")
     ])
     @GetMapping("/available")
-    fun available() = ResponseEntity.ok(
-        service.available().map { OfferedServiceDTO.fromEntity(it) }
-    )
+    fun available(): ResponseEntity<*> {
+        val items = service.available()
+        val badges = badgesFor(items.map { it.caregiverId ?: 0 })
+        return ResponseEntity.ok(items.map { OfferedServiceDTO.fromEntity(it, badges[it.caregiverId]) })
+    }
 
     @Operation(summary = "Obtener un servicio ofrecido por id")
     @ApiResponses(value = [

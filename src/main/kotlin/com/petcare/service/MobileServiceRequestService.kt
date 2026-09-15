@@ -21,7 +21,8 @@ class MobileServiceRequestService(
     private val requestRepository: ServiceRequestRepository,
     private val applicationRepository: ServiceApplicationRepository,
     private val offeredServiceRepository: OfferedServiceRepository,
-    private val entityManager: EntityManager
+    private val entityManager: EntityManager,
+    private val badgeService: BadgeService
 ) {
     fun byOwner(ownerId: Int) = requestRepository.findByOwnerIdOrderByCreatedAtDesc(ownerId)
     fun available() = requestRepository.findByStatusIgnoreCaseAndSourceTypeIgnoreCaseOrderByCreatedAtDesc("PENDING", "OPEN")
@@ -175,6 +176,11 @@ class MobileServiceRequestService(
         request.status = "CANCELLED"
         request.motivoCancelacion = reason
         requestRepository.save(request)
+
+        // Una cancelacion cuenta contra el badge de ambas partes.
+        application.caregiverId?.let { badgeService.actualizarBadge(it) }
+        request.ownerId?.let { badgeService.actualizarBadge(it) }
+
         return saved
     }
 
@@ -187,6 +193,10 @@ class MobileServiceRequestService(
         requestRepository.findById(application.serviceRequestId ?: -1).ifPresent { request ->
             request.status = "COMPLETED"
             requestRepository.save(request)
+
+            // Un servicio completado cambia el conteo de servicios de ambas partes: recalculamos su badge.
+            application.caregiverId?.let { badgeService.actualizarBadge(it) }
+            request.ownerId?.let { badgeService.actualizarBadge(it) }
         }
         return saved
     }

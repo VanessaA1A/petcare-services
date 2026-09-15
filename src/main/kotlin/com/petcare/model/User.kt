@@ -132,11 +132,16 @@ class User {
     @JvmField
     var noMolestar: Boolean? = false
 
+    @Column(name = "badge")
+    @JvmField
+    var badge: String? = "NUEVO"
+
     @PrePersist
     fun prePersist() {
         if (createdAt == null) createdAt = OffsetDateTime.now()
         if (isActive == null) isActive = true
         if (twoFactorEnabled == null) twoFactorEnabled = false
         if (noMolestar == null) noMolestar = false
+        if (badge == null) badge = "NUEVO"
     }
 }

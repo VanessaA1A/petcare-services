@@ -21,7 +21,8 @@ data class OfferedServiceDTO(
     @JsonProperty("is_available") @Schema(example = "true") val isAvailable: Boolean = true,
     @Schema(example = "12.1364") val latitude: Double? = null,
     @Schema(example = "-86.2514") val longitude: Double? = null,
-    @JsonProperty("created_at") @Schema(example = "2026-06-01T08:00:00Z") val createdAt: String? = null
+    @JsonProperty("created_at") @Schema(example = "2026-06-01T08:00:00Z") val createdAt: String? = null,
+    @JsonProperty("caregiver_badge") @Schema(example = "CONFIABLE") val caregiverBadge: String? = null
 ) {
     fun toEntity(existing: OfferedService? = null): OfferedService {
         val service = existing ?: OfferedService()
@@ -37,7 +38,7 @@ data class OfferedServiceDTO(
     }
 
     companion object {
-        fun fromEntity(entity: OfferedService) = OfferedServiceDTO(
+        fun fromEntity(entity: OfferedService, caregiverBadge: String? = null) = OfferedServiceDTO(
             id = entity.id,
             caregiverId = entity.caregiverId ?: 0,
             serviceTypeId = entity.serviceTypeId ?: 0,
@@ -47,7 +48,8 @@ data class OfferedServiceDTO(
             isAvailable = entity.isAvailable,
             latitude = entity.latitude,
             longitude = entity.longitude,
-            createdAt = entity.createdAt?.toString()
+            createdAt = entity.createdAt?.toString(),
+            caregiverBadge = caregiverBadge
         )
     }
 }
@@ -68,7 +70,8 @@ data class ServiceRequestDTO(
     @JsonProperty("source_type") @Schema(example = "OPEN") val sourceType: String = "OPEN",
     @Schema(example = "12.1364") val latitude: Double? = null,
     @Schema(example = "-86.2514") val longitude: Double? = null,
-    @JsonProperty("created_at") @Schema(example = "2026-09-14T12:00:00Z") val createdAt: String? = null
+    @JsonProperty("created_at") @Schema(example = "2026-09-14T12:00:00Z") val createdAt: String? = null,
+    @JsonProperty("owner_badge") @Schema(example = "CONFIABLE") val ownerBadge: String? = null
 ) {
     fun toEntity(existing: ServiceRequest? = null): ServiceRequest {
         val request = existing ?: ServiceRequest()
@@ -91,7 +94,7 @@ data class ServiceRequestDTO(
     }
 
     companion object {
-        fun fromEntity(entity: ServiceRequest): ServiceRequestDTO {
+        fun fromEntity(entity: ServiceRequest, ownerBadge: String? = null): ServiceRequestDTO {
             val ids = entity.petIds
                 ?.split(',')
                 ?.mapNotNull { it.trim().toIntOrNull() }
@@ -113,7 +116,8 @@ data class ServiceRequestDTO(
                 sourceType = entity.sourceType,
                 latitude = entity.latitude,
                 longitude = entity.longitude,
-                createdAt = entity.createdAt?.toString()
+                createdAt = entity.createdAt?.toString(),
+                ownerBadge = ownerBadge
             )
         }
     }
@@ -132,7 +136,9 @@ data class ServiceApplicationDTO(
     @JsonProperty("owner_email") @Schema(example = "maria@petcare.local") val ownerEmail: String? = null,
     @JsonProperty("caregiver_phone") @Schema(example = "+505 8888 2222") val caregiverPhone: String? = null,
     @JsonProperty("caregiver_email") @Schema(example = "carlos@petcare.local") val caregiverEmail: String? = null,
-    @JsonProperty("created_at") @Schema(example = "2026-09-14T09:30:00Z") val createdAt: String? = null
+    @JsonProperty("created_at") @Schema(example = "2026-09-14T09:30:00Z") val createdAt: String? = null,
+    @JsonProperty("owner_badge") @Schema(example = "CONFIABLE") val ownerBadge: String? = null,
+    @JsonProperty("caregiver_badge") @Schema(example = "EXPERIMENTADO") val caregiverBadge: String? = null
 ) {
     fun toEntity(existing: ServiceApplication? = null): ServiceApplication {
         val application = existing ?: ServiceApplication()
@@ -152,7 +158,9 @@ data class ServiceApplicationDTO(
             ownerPhone: String? = null,
             ownerEmail: String? = null,
             caregiverPhone: String? = null,
-            caregiverEmail: String? = null
+            caregiverEmail: String? = null,
+            ownerBadge: String? = null,
+            caregiverBadge: String? = null
         ) = ServiceApplicationDTO(
             id = entity.id,
             serviceRequestId = entity.serviceRequestId ?: 0,
@@ -166,7 +174,9 @@ data class ServiceApplicationDTO(
             ownerEmail = ownerEmail,
             caregiverPhone = caregiverPhone,
             caregiverEmail = caregiverEmail,
-            createdAt = entity.createdAt?.toString()
+            createdAt = entity.createdAt?.toString(),
+            ownerBadge = ownerBadge,
+            caregiverBadge = caregiverBadge
         )
     }
 }

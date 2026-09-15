@@ -10,6 +10,7 @@ import com.petcare.dto.UserProfileResponse
 import com.petcare.exception.StorageException
 import com.petcare.exception.UserNotFoundException
 import com.petcare.model.User
+import com.petcare.service.BadgeService
 import com.petcare.service.FileStorageService
 import com.petcare.service.NotificationService
 import com.petcare.service.UserService
@@ -37,7 +38,8 @@ import java.nio.file.Path
 class UsuarioProfileController(
     private val userService: UserService,
     private val fileStorageService: FileStorageService,
-    private val notificationService: NotificationService
+    private val notificationService: NotificationService,
+    private val badgeService: BadgeService
 ) {
 
     @Operation(
@@ -192,5 +194,17 @@ class UsuarioProfileController(
             .contentType(contentType)
             .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"${path.fileName}\"")
             .body(resource)
+    }
+
+    @Operation(summary = "Obtener el badge (etiqueta por calificacion) de un usuario", description = "NUEVO, EN_CRECIMIENTO, CONFIABLE, EXPERIMENTADO, ELITE o EN_OBSERVACION segun su historial de servicios y calificaciones.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Badge del usuario"),
+        ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+    ])
+    @GetMapping("/{id}/badge")
+    fun obtenerBadge(@PathVariable id: Int): ResponseEntity<*> {
+        val user = userService.findById(id).orElse(null)
+            ?: return ResponseEntity.status(404).body(mapOf("error" to "Usuario no encontrado"))
+        return ResponseEntity.ok(mapOf("badge" to (user.badge ?: badgeService.calcularBadge(id))))
     }
 }
