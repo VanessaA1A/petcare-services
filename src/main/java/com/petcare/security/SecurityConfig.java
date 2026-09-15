@@ -57,6 +57,12 @@ public class SecurityConfig {
                     .requestMatchers("/api/usuarios/fcm-token").permitAll()
                     .requestMatchers("/api/usuarios/no-molestar").permitAll()
                     .requestMatchers("/api/usuarios/{id}/foto").permitAll()
+                    // Bloque 7: panel de admin (dashboard de metricas, solo lectura). Sin login de
+                    // administrador propio en esta version, se deja abierto para que la pagina
+                    // funcione sin JWT - si esto se despliega fuera de un entorno de demo/universidad,
+                    // hay que agregar autenticacion real antes de exponerlo publicamente.
+                    .requestMatchers("/api/admin/**").permitAll()
+                    .requestMatchers("/admin/**").permitAll()
                     .requestMatchers("/static/**").permitAll()
                     .requestMatchers("/api/usuarios/me/**").authenticated()
                     .requestMatchers("/api/usuarios/me").authenticated()

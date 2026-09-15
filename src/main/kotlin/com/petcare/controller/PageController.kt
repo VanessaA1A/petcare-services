@@ -19,4 +19,7 @@ class PageController {
 
     @GetMapping("/register")
     fun register(): RedirectView = RedirectView("/register.html")
+
+    @GetMapping("/admin/dashboard")
+    fun adminDashboard(): String = "admin-dashboard"
 }

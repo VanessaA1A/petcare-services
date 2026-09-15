@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PetCare · Panel de administración</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            background: #faf3e8;
+            color: #3d2b1f;
+        }
+        header {
+            background: #6b4226;
+            color: #fff;
+            padding: 20px 28px;
+        }
+        header h1 { margin: 0; font-size: 22px; }
+        main { max-width: 1100px; margin: 0 auto; padding: 28px; }
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 18px 20px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .card .value { font-size: 30px; font-weight: 700; color: #6b4226; }
+        .card .label { font-size: 13px; color: #7a6a5c; margin-top: 4px; }
+        .charts {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .panel {
+            background: #fff;
+            border-radius: 14px;
+            padding: 18px 20px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .panel h2 { margin: 0 0 12px; font-size: 15px; color: #6b4226; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #f0e6d8; }
+        th { color: #7a6a5c; font-weight: 600; }
+        .estado {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            background: #f0e6d8;
+            color: #6b4226;
+        }
+        #loadingMsg { color: #7a6a5c; padding: 20px; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>🐾 PetCare · Panel de administración</h1>
+</header>
+<main>
+    <p id="loadingMsg">Cargando métricas...</p>
+
+    <section class="cards" id="cards" style="display:none;">
+        <div class="card"><div class="value" id="totalUsuarios">-</div><div class="label">Usuarios totales</div></div>
+        <div class="card"><div class="value" id="serviciosCompletados">-</div><div class="label">Servicios completados</div></div>
+        <div class="card"><div class="value" id="solicitudesActivas">-</div><div class="label">Solicitudes activas</div></div>
+        <div class="card"><div class="value" id="cuidadoresActivos">-</div><div class="label">Cuidadores activos</div></div>
+    </section>
+
+    <section class="charts" id="charts" style="display:none;">
+        <div class="panel">
+            <h2>Actividad (últimos 7 días)</h2>
+            <canvas id="activityChart" height="120"></canvas>
+        </div>
+        <div class="panel">
+            <h2>Usuarios por rol</h2>
+            <canvas id="roleChart" height="160"></canvas>
+        </div>
+    </section>
+
+    <section class="panel" id="tablePanel" style="display:none;">
+        <h2>Últimas 10 solicitudes</h2>
+        <table>
+            <thead>
+            <tr><th>ID</th><th>Título</th><th>Estado</th><th>Fecha</th></tr>
+            </thead>
+            <tbody id="requestsBody"></tbody>
+        </table>
+    </section>
+</main>
+
+<script th:inline="javascript">
+    async function cargarDashboard() {
+        try {
+            const [statsRes, activityRes] = await Promise.all([
+                fetch('/api/admin/dashboard/stats'),
+                fetch('/api/admin/dashboard/activity?dias=7')
+            ]);
+            const stats = await statsRes.json();
+            const activity = await activityRes.json();
+
+            document.getElementById('totalUsuarios').textContent = stats.total_usuarios;
+            document.getElementById('serviciosCompletados').textContent = stats.servicios_completados;
+            document.getElementById('solicitudesActivas').textContent = stats.solicitudes_activas;
+            document.getElementById('cuidadoresActivos').textContent = stats.cuidadores_activos;
+
+            const tbody = document.getElementById('requestsBody');
+            tbody.innerHTML = '';
+            stats.ultimas_solicitudes.forEach(function (r) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td>#' + r.id + '</td><td>' + (r.titulo || '') + '</td>' +
+                    '<td><span class="estado">' + (r.estado || '') + '</span></td>' +
+                    '<td>' + (r.fecha ? new Date(r.fecha).toLocaleString('es-NI') : '-') + '</td>';
+                tbody.appendChild(tr);
+            });
+
+            new Chart(document.getElementById('activityChart'), {
+                type: 'line',
+                data: {
+                    labels: activity.map(function (p) { return p.fecha; }),
+                    datasets: [{
+                        label: 'Solicitudes publicadas',
+                        data: activity.map(function (p) { return p.cantidad; }),
+                        borderColor: '#6b4226',
+                        backgroundColor: 'rgba(107,66,38,0.12)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+            });
+
+            const roles = stats.usuarios_por_rol || {};
+            new Chart(document.getElementById('roleChart'), {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(roles),
+                    datasets: [{
+                        data: Object.values(roles),
+                        backgroundColor: ['#6b4226', '#c98a4b', '#e8c39e', '#9c6644']
+                    }]
+                }
+            });
+
+            document.getElementById('loadingMsg').style.display = 'none';
+            document.getElementById('cards').style.display = 'grid';
+            document.getElementById('charts').style.display = 'grid';
+            document.getElementById('tablePanel').style.display = 'block';
+        } catch (e) {
+            document.getElementById('loadingMsg').textContent = 'No se pudieron cargar las métricas: ' + e;
+        }
+    }
+
+    cargarDashboard();
+</script>
+</body>
+</html>
