@@ -20,6 +20,7 @@ class FileStorageService {
 
     private val baseDir: Path = Paths.get("uploads/perfiles").toAbsolutePath().normalize()
     private val chatBaseDir: Path = Paths.get("uploads/chat").toAbsolutePath().normalize()
+    private val evidenciasBaseDir: Path = Paths.get("uploads/evidencias").toAbsolutePath().normalize()
     private val maxFileSize: Long = 5 * 1024 * 1024
     private val allowedContentTypes = setOf("image/jpeg", "image/png", "image/gif", "image/webp")
 
@@ -27,6 +28,7 @@ class FileStorageService {
         try {
             Files.createDirectories(baseDir)
             Files.createDirectories(chatBaseDir)
+            Files.createDirectories(evidenciasBaseDir)
         } catch (ex: IOException) {
             throw StorageException("Could not create storage directory")
         }
@@ -130,6 +132,53 @@ class FileStorageService {
         val cleaned = StringUtils.cleanPath(filename)
         val target = chatBaseDir.resolve(cleaned).normalize()
         if (!target.startsWith(chatBaseDir)) {
+            throw StorageException("Cannot read file outside permitted directory")
+        }
+        if (Files.notExists(target) || !Files.isReadable(target)) {
+            throw StorageException("File not found")
+        }
+        return target
+    }
+
+    fun storeEvidenciaImage(solicitudId: Int, tipo: String, file: MultipartFile): String {
+        if (file.isEmpty) {
+            throw StorageException("File is empty")
+        }
+        if (file.size > maxFileSize) {
+            throw StorageException("File size exceeds maximum allowed 5MB")
+        }
+        val contentType = file.contentType
+        if (contentType == null || !allowedContentTypes.contains(contentType)) {
+            throw StorageException("File type not allowed")
+        }
+
+        val extension = when (contentType) {
+            "image/jpeg" -> "jpg"
+            "image/png" -> "png"
+            "image/gif" -> "gif"
+            "image/webp" -> "webp"
+            else -> throw StorageException("Unsupported image type")
+        }
+
+        val filename = "evidencia_${solicitudId}_${tipo.lowercase()}_${Instant.now().toEpochMilli()}.$extension"
+        val targetLocation = evidenciasBaseDir.resolve(StringUtils.cleanPath(filename))
+        if (!targetLocation.normalize().startsWith(evidenciasBaseDir)) {
+            throw StorageException("Cannot store file outside the permitted directory")
+        }
+
+        try {
+            Files.copy(file.inputStream, targetLocation)
+        } catch (ex: IOException) {
+            throw StorageException("Could not store file: ${ex.message}")
+        }
+
+        return filename
+    }
+
+    fun loadEvidenciaImage(filename: String): Path {
+        val cleaned = StringUtils.cleanPath(filename)
+        val target = evidenciasBaseDir.resolve(cleaned).normalize()
+        if (!target.startsWith(evidenciasBaseDir)) {
             throw StorageException("Cannot read file outside permitted directory")
         }
         if (Files.notExists(target) || !Files.isReadable(target)) {

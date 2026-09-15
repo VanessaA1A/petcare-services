@@ -1,5 +1,6 @@
 -- PetCare Services schema init
 
+DROP TABLE IF EXISTS evidencias_servicio CASCADE;
 DROP TABLE IF EXISTS valoraciones_tiempo_real CASCADE;
 DROP TABLE IF EXISTS emergencias CASCADE;
 DROP TABLE IF EXISTS logs_auditoria CASCADE;
@@ -259,3 +260,17 @@ CREATE TABLE valoraciones_tiempo_real (
 );
 
 CREATE INDEX IF NOT EXISTS idx_valoraciones_tiempo_real_service_request_id ON valoraciones_tiempo_real(service_request_id);
+
+-- Bloque 8: evidencia fotografica (ANTES/DESPUES) de un servicio.
+CREATE TABLE evidencias_servicio (
+  id serial PRIMARY KEY,
+  solicitud_id integer REFERENCES service_requests(id) ON DELETE CASCADE,
+  tipo varchar(20) NOT NULL CHECK (tipo IN ('ANTES', 'DESPUES')),
+  imagen_url text NOT NULL,
+  nota text,
+  latitud decimal(10,8),
+  longitud decimal(11,8),
+  fecha timestamp DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_evidencias_servicio_solicitud_id ON evidencias_servicio(solicitud_id);

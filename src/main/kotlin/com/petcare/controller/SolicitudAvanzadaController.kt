@@ -5,9 +5,14 @@ package com.petcare.controller
  * Controlador REST. Recibe peticiones HTTP, valida el flujo basico y delega la logica al servicio.
  */
 
+import com.petcare.dto.EvidenciaServicioDTO
 import com.petcare.dto.ServiceRequestDTO
 import com.petcare.dto.ValoracionTiempoRealDTO
+import com.petcare.exception.StorageException
+import com.petcare.model.EvidenciaServicio
 import com.petcare.model.ServiceRequest
+import com.petcare.service.EvidenciaServicioService
+import com.petcare.service.FileStorageService
 import com.petcare.service.MobileServiceRequestService
 import com.petcare.service.SolicitudNoEnCursoException
 import com.petcare.service.ValoracionTiempoRealService
@@ -18,8 +23,15 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.core.io.Resource
+import org.springframework.core.io.UrlResource
+import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
+import java.net.MalformedURLException
+import java.nio.file.Path
 
 @RestController
 @RequestMapping("/api/solicitudes")
@@ -28,7 +40,9 @@ class SolicitudAvanzadaController(
     private val service: MobileServiceRequestService,
     private val wsEventService: WsEventService,
     private val liveLocationRegistry: LiveLocationRegistry,
-    private val valoracionTiempoRealService: ValoracionTiempoRealService
+    private val valoracionTiempoRealService: ValoracionTiempoRealService,
+    private val evidenciaService: EvidenciaServicioService,
+    private val fileStorageService: FileStorageService
 ) {
 
     @Operation(summary = "Editar una solicitud de servicio", description = "Solo se permite mientras la solicitud esta en estado PENDING.")
@@ -182,6 +196,80 @@ class SolicitudAvanzadaController(
             ResponseEntity.status(201).body(ValoracionTiempoRealDTO.fromEntity(saved))
         } catch (ex: SolicitudNoEnCursoException) {
             ResponseEntity.badRequest().body(mapOf("error" to ex.message))
+        }
+    }
+
+    @Operation(
+        summary = "Subir evidencia fotografica (antes/despues) de un servicio",
+        description = "Foto obligatoria en la app al iniciar (ANTES) y terminar (DESPUES) un servicio. " +
+            "Este endpoint no bloquea ningun cambio de estado: si el dispositivo no tiene internet a tiempo, " +
+            "la app permite igual el cambio de estado y sube la foto despues, al reconectar."
+    )
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "201", description = "Evidencia guardada"),
+        ApiResponse(responseCode = "400", description = "tipo invalido o archivo vacio/tipo no permitido")
+    ])
+    @PostMapping("/{id}/evidencia", consumes = ["multipart/form-data"])
+    fun subirEvidencia(
+        @PathVariable id: Int,
+        @RequestParam tipo: String,
+        @RequestParam(required = false) nota: String?,
+        @RequestParam(required = false) latitud: Double?,
+        @RequestParam(required = false) longitud: Double?,
+        @RequestParam("file") file: MultipartFile
+    ): ResponseEntity<*> {
+        if (tipo !in EvidenciaServicioDTO.TIPOS_VALIDOS) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "tipo debe ser uno de ${EvidenciaServicioDTO.TIPOS_VALIDOS}"))
+        }
+        return try {
+            val filename = fileStorageService.storeEvidenciaImage(id, tipo, file)
+            val entity = EvidenciaServicio(
+                solicitudId = id,
+                tipo = tipo,
+                imagenUrl = "/api/solicitudes/evidencia/$filename",
+                nota = nota,
+                latitud = latitud,
+                longitud = longitud
+            )
+            val saved = evidenciaService.guardar(entity)
+            ResponseEntity.status(201).body(EvidenciaServicioDTO.fromEntity(saved))
+        } catch (ex: StorageException) {
+            ResponseEntity.badRequest().body(mapOf("error" to ex.message))
+        }
+    }
+
+    @Operation(summary = "Listar la evidencia fotografica (antes/despues) de un servicio")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Evidencia del servicio")
+    ])
+    @GetMapping("/{id}/evidencias")
+    fun listarEvidencias(@PathVariable id: Int): ResponseEntity<List<EvidenciaServicioDTO>> =
+        ResponseEntity.ok(evidenciaService.listar(id).map { EvidenciaServicioDTO.fromEntity(it) })
+
+    @Operation(summary = "Servir una imagen de evidencia por nombre de archivo")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Imagen servida"),
+        ApiResponse(responseCode = "404", description = "Imagen no encontrada")
+    ])
+    @GetMapping("/evidencia/{filename}")
+    fun servirEvidencia(@PathVariable filename: String): ResponseEntity<*> {
+        return try {
+            val path: Path = fileStorageService.loadEvidenciaImage(filename)
+            val resource: Resource = UrlResource(path.toUri())
+            val contentType = when (path.toString().substringAfterLast('.', "jpg").lowercase()) {
+                "png" -> MediaType.IMAGE_PNG
+                "gif" -> MediaType.IMAGE_GIF
+                "webp" -> MediaType.valueOf("image/webp")
+                else -> MediaType.IMAGE_JPEG
+            }
+            ResponseEntity.ok()
+                .contentType(contentType)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"${path.fileName}\"")
+                .body(resource)
+        } catch (ex: StorageException) {
+            ResponseEntity.status(404).body(mapOf("error" to ex.message))
+        } catch (ex: MalformedURLException) {
+            ResponseEntity.status(404).body(mapOf("error" to "Imagen no encontrada"))
         }
     }
 }
