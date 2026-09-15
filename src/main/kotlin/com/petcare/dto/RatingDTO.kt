@@ -7,16 +7,17 @@ package com.petcare.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.petcare.model.Rating
+import io.swagger.v3.oas.annotations.media.Schema
 
 data class RatingDTO(
-    val id: Int? = null,
-    @JsonProperty("service_request_id") val serviceRequestId: Int,
-    @JsonProperty("caregiver_id") val caregiverId: Int,
-    @JsonProperty("owner_id") val ownerId: Int,
-    @JsonProperty("rated_by_role") val ratedByRole: String = "OWNER",
-    val score: Double,
-    val comment: String? = null,
-    @JsonProperty("created_at") val createdAt: String? = null
+    @Schema(example = "42") val id: Int? = null,
+    @JsonProperty("service_request_id") @Schema(example = "1001") val serviceRequestId: Int,
+    @JsonProperty("caregiver_id") @Schema(example = "22") val caregiverId: Int,
+    @JsonProperty("owner_id") @Schema(example = "17") val ownerId: Int,
+    @JsonProperty("rated_by_role") @Schema(example = "OWNER") val ratedByRole: String = "OWNER",
+    @Schema(example = "4.5") val score: Double,
+    @Schema(example = "Excelente atencion, muy puntual.") val comment: String? = null,
+    @JsonProperty("created_at") @Schema(example = "2026-09-05T18:45:00Z") val createdAt: String? = null
 ) {
     fun toEntity(existing: Rating? = null): Rating {
         val rating = existing ?: Rating()
@@ -44,6 +45,6 @@ data class RatingDTO(
 }
 
 data class RatingSummaryDTO(
-    val average: Double,
-    val count: Int
+    @Schema(example = "4.7") val average: Double,
+    @Schema(example = "15") val count: Int
 )

@@ -7,14 +7,15 @@ package com.petcare.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.petcare.model.UserNote
+import io.swagger.v3.oas.annotations.media.Schema
 
 data class NotaUsuarioDTO(
-    val id: Int? = null,
-    @JsonProperty("propietario_id") val ownerId: Int = 0,
-    @JsonProperty("objetivo_id") val targetId: Int = 0,
-    val nota: String = "",
-    @JsonProperty("fecha_creacion") val createdAt: String? = null,
-    @JsonProperty("fecha_actualizacion") val updatedAt: String? = null
+    @Schema(example = "6") val id: Int? = null,
+    @JsonProperty("propietario_id") @Schema(example = "17") val ownerId: Int = 0,
+    @JsonProperty("objetivo_id") @Schema(example = "22") val targetId: Int = 0,
+    @Schema(example = "Muy puntual, se le puede confiar la llave de la casa.") val nota: String = "",
+    @JsonProperty("fecha_creacion") @Schema(example = "2026-07-01T10:00:00Z") val createdAt: String? = null,
+    @JsonProperty("fecha_actualizacion") @Schema(example = "2026-07-05T16:20:00Z") val updatedAt: String? = null
 ) {
     fun toEntity(existing: UserNote? = null): UserNote {
         val note = existing ?: UserNote()

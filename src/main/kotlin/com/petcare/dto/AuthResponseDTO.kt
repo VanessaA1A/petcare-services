@@ -7,6 +7,7 @@ package com.petcare.dto
 
 import com.petcare.model.User
 import com.petcare.model.Session
+import io.swagger.v3.oas.annotations.media.Schema
 
 data class AuthResponseDTO(
     val user: UserInfoDTO,
@@ -23,10 +24,10 @@ data class AuthResponseDTO(
 }
 
 data class UserInfoDTO(
-    val id: Int,
-    val username: String,
-    val email: String,
-    val rol: String?
+    @Schema(example = "17") val id: Int,
+    @Schema(example = "maria.propietaria") val username: String,
+    @Schema(example = "maria@petcare.local") val email: String,
+    @Schema(example = "propietario") val rol: String?
 ) {
     companion object {
         fun fromUser(user: User): UserInfoDTO {

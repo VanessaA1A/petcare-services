@@ -7,13 +7,14 @@ package com.petcare.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.petcare.model.SavedSearch
+import io.swagger.v3.oas.annotations.media.Schema
 
 data class BusquedaGuardadaDTO(
-    val id: Int? = null,
-    @JsonProperty("usuario_id") val usuarioId: Int = 0,
-    val nombre: String = "",
-    @JsonProperty("filtros_json") val filtrosJson: String = "",
-    @JsonProperty("fecha_creacion") val createdAt: String? = null
+    @Schema(example = "5") val id: Int? = null,
+    @JsonProperty("usuario_id") @Schema(example = "17") val usuarioId: Int = 0,
+    @Schema(example = "Paseadores cerca de mi casa") val nombre: String = "",
+    @JsonProperty("filtros_json") @Schema(example = "{\"tipo\":\"paseo\",\"radioKm\":5}") val filtrosJson: String = "",
+    @JsonProperty("fecha_creacion") @Schema(example = "2026-08-01T10:15:00Z") val createdAt: String? = null
 ) {
     fun toEntity(): SavedSearch = SavedSearch(
         usuarioId = usuarioId,

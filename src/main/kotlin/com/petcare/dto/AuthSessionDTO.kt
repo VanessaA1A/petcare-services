@@ -6,10 +6,11 @@ package com.petcare.dto
  */
 
 import com.petcare.model.Session
+import io.swagger.v3.oas.annotations.media.Schema
 
 data class AuthSessionDTO(
-    val id: Int,
-    val tokenSesion: String
+    @Schema(example = "1001") val id: Int,
+    @Schema(example = "a1b2c3d4-e5f6-4789-9abc-def012345678") val tokenSesion: String
 ) {
     companion object {
         fun fromSession(session: Session): AuthSessionDTO {

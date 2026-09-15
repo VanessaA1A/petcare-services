@@ -7,15 +7,16 @@ package com.petcare.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.petcare.model.ChatMessage
+import io.swagger.v3.oas.annotations.media.Schema
 
 data class ChatMessageDTO(
-    val id: Int? = null,
-    @JsonProperty("service_request_id") val serviceRequestId: Int,
-    @JsonProperty("sender_id") val senderId: Int,
-    @JsonProperty("receiver_id") val receiverId: Int,
-    val message: String,
-    @JsonProperty("is_read") val isRead: Boolean = false,
-    @JsonProperty("created_at") val createdAt: String? = null
+    @Schema(example = "301") val id: Int? = null,
+    @JsonProperty("service_request_id") @Schema(example = "1001") val serviceRequestId: Int,
+    @JsonProperty("sender_id") @Schema(example = "17") val senderId: Int,
+    @JsonProperty("receiver_id") @Schema(example = "22") val receiverId: Int,
+    @Schema(example = "Hola, llego en 10 minutos para el paseo.") val message: String,
+    @JsonProperty("is_read") @Schema(example = "false") val isRead: Boolean = false,
+    @JsonProperty("created_at") @Schema(example = "2026-09-10T14:30:00Z") val createdAt: String? = null
 ) {
     fun toEntity(): ChatMessage = ChatMessage(
         serviceRequestId = serviceRequestId,
@@ -37,4 +38,4 @@ data class ChatMessageDTO(
     }
 }
 
-data class UnreadCountDTO(@JsonProperty("no_leidos") val noLeidos: Int)
+data class UnreadCountDTO(@JsonProperty("no_leidos") @Schema(example = "3") val noLeidos: Int)

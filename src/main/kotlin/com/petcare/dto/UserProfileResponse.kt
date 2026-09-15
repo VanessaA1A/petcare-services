@@ -6,16 +6,17 @@ package com.petcare.dto
  */
 
 import com.petcare.model.User
+import io.swagger.v3.oas.annotations.media.Schema
 
 data class UserProfileResponse(
-    val id: Int,
-    val username: String,
-    val email: String,
-    val rol: String?,
-    val nombre: String?,
-    val apellido: String?,
-    val telefono: String?,
-    val fotoPerfilUrl: String?
+    @Schema(example = "17") val id: Int,
+    @Schema(example = "maria.propietaria") val username: String,
+    @Schema(example = "maria@petcare.local") val email: String,
+    @Schema(example = "propietario") val rol: String?,
+    @Schema(example = "Maria") val nombre: String?,
+    @Schema(example = "Propietaria") val apellido: String?,
+    @Schema(example = "+505 8888 1111") val telefono: String?,
+    @Schema(example = "https://cdn.petcare.local/perfiles/17.jpg") val fotoPerfilUrl: String?
 ) {
     companion object {
         fun fromUser(user: User): UserProfileResponse {
