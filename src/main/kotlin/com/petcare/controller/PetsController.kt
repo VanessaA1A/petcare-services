@@ -8,6 +8,8 @@ package com.petcare.controller
 import com.petcare.model.Pet
 import com.petcare.service.PetService
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -19,10 +21,17 @@ import java.math.BigDecimal
 class PetsController(private val petService: PetService) {
 
     @Operation(summary = "Listar mascotas de un propietario")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Lista de mascotas del propietario")
+    ])
     @GetMapping("/owner/{owner_id}")
     fun getByOwner(@PathVariable owner_id: Int): ResponseEntity<*> = ResponseEntity.ok(petService.findByOwnerId(owner_id))
 
     @Operation(summary = "Obtener una mascota por id")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Mascota encontrada"),
+        ApiResponse(responseCode = "404", description = "Mascota no encontrada")
+    ])
     @GetMapping("/{id}")
     fun getById(@PathVariable id: Int): ResponseEntity<*> {
         val p = petService.findById(id)
@@ -30,6 +39,10 @@ class PetsController(private val petService: PetService) {
     }
 
     @Operation(summary = "Registrar una mascota")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "201", description = "Mascota creada"),
+        ApiResponse(responseCode = "400", description = "owner_id, name, breed o size faltantes/inválidos")
+    ])
     @PostMapping
     fun createPet(@RequestBody body: Map<String, Any>): ResponseEntity<*> {
         return try {
@@ -55,6 +68,10 @@ class PetsController(private val petService: PetService) {
     }
 
     @Operation(summary = "Registrar varias mascotas de un propietario en una sola llamada")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "201", description = "Mascotas creadas"),
+        ApiResponse(responseCode = "400", description = "owner_id/pets faltantes o el payload de mascotas es inválido")
+    ])
     @PostMapping("/bulk")
     fun createBulk(@RequestBody body: Map<String, Any>): ResponseEntity<*> {
         val owner = body["owner_id"]?.toString()?.toIntOrNull()
@@ -85,6 +102,10 @@ class PetsController(private val petService: PetService) {
     }
 
     @Operation(summary = "Actualizar una mascota")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Mascota actualizada"),
+        ApiResponse(responseCode = "404", description = "Mascota no encontrada")
+    ])
     @PutMapping("/{id}")
     fun updatePet(@PathVariable id: Int, @RequestBody body: Map<String, Any>): ResponseEntity<*> {
         val po = petService.findById(id)
@@ -104,6 +125,9 @@ class PetsController(private val petService: PetService) {
     }
 
     @Operation(summary = "Eliminar una mascota")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "204", description = "Mascota eliminada")
+    ])
     @DeleteMapping("/{id}")
     fun deletePet(@PathVariable id: Int): ResponseEntity<*> {
         petService.delete(id)
@@ -111,6 +135,9 @@ class PetsController(private val petService: PetService) {
     }
 
     @Operation(summary = "Listar todas las mascotas")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Lista de todas las mascotas")
+    ])
     @GetMapping("/all")
     fun getAll() = ResponseEntity.ok(petService.listAll())
 }

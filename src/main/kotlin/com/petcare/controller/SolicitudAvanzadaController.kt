@@ -9,6 +9,8 @@ import com.petcare.dto.ServiceRequestDTO
 import com.petcare.model.ServiceRequest
 import com.petcare.service.MobileServiceRequestService
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -19,6 +21,11 @@ import org.springframework.web.bind.annotation.*
 class SolicitudAvanzadaController(private val service: MobileServiceRequestService) {
 
     @Operation(summary = "Editar una solicitud de servicio", description = "Solo se permite mientras la solicitud esta en estado PENDING.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Solicitud actualizada"),
+        ApiResponse(responseCode = "400", description = "La solicitud no esta en estado PENDING"),
+        ApiResponse(responseCode = "404", description = "Solicitud no encontrada")
+    ])
     @PutMapping("/{id}")
     fun actualizar(@PathVariable id: Int, @RequestBody body: Map<String, Any?>): ResponseEntity<*> {
         return try {
@@ -31,6 +38,11 @@ class SolicitudAvanzadaController(private val service: MobileServiceRequestServi
     }
 
     @Operation(summary = "Extender el plazo de una solicitud", description = "Extiende la fecha de expiracion 24 horas. Solo aplica a solicitudes en estado PENDING.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Plazo extendido"),
+        ApiResponse(responseCode = "400", description = "La solicitud no esta en estado PENDING"),
+        ApiResponse(responseCode = "404", description = "Solicitud no encontrada")
+    ])
     @PostMapping("/{id}/extender")
     fun extender(@PathVariable id: Int): ResponseEntity<*> {
         if (service.findRequest(id).isEmpty) {
@@ -42,6 +54,11 @@ class SolicitudAvanzadaController(private val service: MobileServiceRequestServi
     }
 
     @Operation(summary = "Reasignar una solicitud", description = "Vuelve a poner en PENDING una solicitud CANCELLED o ACCEPTED y cancela las postulaciones aceptadas.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Solicitud reasignada"),
+        ApiResponse(responseCode = "400", description = "La solicitud no esta en estado CANCELLED ni ACCEPTED"),
+        ApiResponse(responseCode = "404", description = "Solicitud no encontrada")
+    ])
     @PostMapping("/{id}/reasignar")
     fun reasignar(@PathVariable id: Int): ResponseEntity<*> {
         if (service.findRequest(id).isEmpty) {
@@ -53,6 +70,9 @@ class SolicitudAvanzadaController(private val service: MobileServiceRequestServi
     }
 
     @Operation(summary = "Historial de solicitudes de un usuario", description = "Solicitudes en estado COMPLETED o CANCELLED. role puede ser OWNER o CAREGIVER.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Historial de solicitudes")
+    ])
     @GetMapping("/historial")
     fun historial(
         @RequestParam usuarioId: Int,
@@ -61,6 +81,9 @@ class SolicitudAvanzadaController(private val service: MobileServiceRequestServi
         ResponseEntity.ok(service.getHistory(usuarioId, role).map { ServiceRequestDTO.fromEntity(it) })
 
     @Operation(summary = "Buscar solicitudes de servicio", description = "Filtra por texto libre (q), tipo de servicio y estado. Sin status, solo busca en PENDING.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Solicitudes encontradas")
+    ])
     @GetMapping("/buscar")
     fun buscar(
         @RequestParam(required = false) q: String?,

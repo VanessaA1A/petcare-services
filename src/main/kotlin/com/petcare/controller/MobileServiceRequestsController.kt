@@ -16,6 +16,8 @@ import com.petcare.service.NotificationService
 import com.petcare.websocket.WsEvent
 import com.petcare.websocket.WsEventService
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
@@ -30,6 +32,9 @@ class MobileServiceRequestsController(
     private val wsEventService: WsEventService
 ) {
     @Operation(summary = "Listar las solicitudes de un dueño")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Lista de solicitudes del dueño")
+    ])
     @GetMapping("/owner/{ownerId}")
     fun byOwner(@PathVariable ownerId: Int) = ResponseEntity.ok(
         // Devuelve las solicitudes del dueno para alimentar inicio e historial.
@@ -37,6 +42,9 @@ class MobileServiceRequestsController(
     )
 
     @Operation(summary = "Listar solicitudes abiertas disponibles para cuidadores")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Lista de solicitudes abiertas")
+    ])
     @GetMapping("/available")
     fun available() = ResponseEntity.ok(
         // Solo se publican solicitudes abiertas y pendientes para cuidadores.
@@ -44,6 +52,10 @@ class MobileServiceRequestsController(
     )
 
     @Operation(summary = "Obtener una solicitud de servicio por id")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Solicitud encontrada"),
+        ApiResponse(responseCode = "404", description = "Solicitud no encontrada")
+    ])
     @GetMapping("/{id}")
     fun byId(@PathVariable id: Int): ResponseEntity<*> {
         val request = service.findRequest(id)
@@ -52,6 +64,10 @@ class MobileServiceRequestsController(
     }
 
     @Operation(summary = "Publicar una nueva solicitud de servicio")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "201", description = "Solicitud publicada"),
+        ApiResponse(responseCode = "400", description = "owner_id, pet_id, service_type_id o title faltantes")
+    ])
     @PostMapping
     fun create(@RequestBody body: Map<String, Any?>): ResponseEntity<*> {
         // Android envia snake_case; el mapper acepta tambien camelCase para facilitar pruebas.
@@ -80,6 +96,10 @@ class MobileServiceRequestsController(
     }
 
     @Operation(summary = "Cambiar el estado de una solicitud de servicio")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Estado actualizado"),
+        ApiResponse(responseCode = "404", description = "Solicitud no encontrada")
+    ])
     @PutMapping("/{id}/status")
     fun updateStatus(
         @PathVariable id: Int,
@@ -114,6 +134,10 @@ class MobileServiceRequestsController(
     }
 
     @Operation(summary = "Actualizar fecha/horario de una solicitud de servicio")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Fecha/horario actualizado"),
+        ApiResponse(responseCode = "404", description = "Solicitud no encontrada")
+    ])
     @PutMapping("/{id}/schedule")
     fun updateSchedule(
         @PathVariable id: Int,
@@ -157,18 +181,28 @@ class MobileServiceApplicationsController(
     private val presenter: ServiceApplicationPresenter
 ) {
     @Operation(summary = "Listar las postulaciones de un cuidador")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Lista de postulaciones del cuidador")
+    ])
     @GetMapping("/caregiver/{caregiverId}")
     fun byCaregiver(@PathVariable caregiverId: Int) = ResponseEntity.ok(
         service.applicationsByCaregiver(caregiverId).map { presenter.toDtoWithNames(it) }
     )
 
     @Operation(summary = "Listar las postulaciones recibidas por un dueño")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Lista de postulaciones recibidas por el dueño")
+    ])
     @GetMapping("/owner/{ownerId}")
     fun byOwner(@PathVariable ownerId: Int) = ResponseEntity.ok(
         service.applicationsByOwner(ownerId).map { presenter.toDtoWithNames(it) }
     )
 
     @Operation(summary = "Crear una postulación", description = "Puede originarse desde el cuidador (se postula) o desde el dueño (acepta una oferta publicada).")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "201", description = "Postulación creada"),
+        ApiResponse(responseCode = "400", description = "service_request_id o caregiver_id faltantes")
+    ])
     @PostMapping
     fun create(@RequestBody body: Map<String, Any?>): ResponseEntity<*> {
         // Una postulacion puede venir del cuidador o nacer desde una oferta del dueno.
@@ -195,6 +229,11 @@ class MobileServiceApplicationsController(
     }
 
     @Operation(summary = "Cambiar el estado de una postulación", description = "Estados especiales: ACCEPTED, DONE_BY_CAREGIVER, REJECTED, CANCELLED, COMPLETED.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Postulación actualizada"),
+        ApiResponse(responseCode = "400", description = "La cancelación no esta permitida en el estado actual"),
+        ApiResponse(responseCode = "404", description = "Postulación no encontrada")
+    ])
     @PutMapping("/{id}/status")
     fun updateStatus(
         @PathVariable id: Int,
@@ -238,6 +277,10 @@ class OfertasController(
     private val logger = LoggerFactory.getLogger(OfertasController::class.java)
 
     @Operation(summary = "Rechazar una postulación/oferta", description = "Atajo explícito que delega en la misma lógica que PUT /api/service-applications/{id}/status con REJECTED.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Postulación rechazada"),
+        ApiResponse(responseCode = "404", description = "Postulación no encontrada")
+    ])
     @PostMapping("/{id}/rechazar")
     fun rechazar(
         @PathVariable id: Int,
@@ -253,6 +296,11 @@ class OfertasController(
     }
 
     @Operation(summary = "Cancelar una postulación/oferta", description = "Atajo explícito que delega en la misma lógica que PUT /api/service-applications/{id}/status con CANCELLED.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Postulación cancelada"),
+        ApiResponse(responseCode = "400", description = "La cancelación no esta permitida en el estado actual"),
+        ApiResponse(responseCode = "404", description = "Postulación no encontrada")
+    ])
     @PostMapping("/{id}/cancelar")
     fun cancelar(
         @PathVariable id: Int,

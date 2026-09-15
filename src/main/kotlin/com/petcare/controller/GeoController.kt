@@ -17,6 +17,8 @@ import com.petcare.service.GeocodingService
 import com.petcare.service.MobileServiceRequestService
 import com.petcare.service.OfferedServiceService
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -34,6 +36,10 @@ class GeoController(
     private val userRepository: UserRepository
 ) {
     @Operation(summary = "Convertir una direccion de texto en coordenadas", description = "Usa Nominatim (OpenStreetMap), limitado a Nicaragua.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Coordenadas encontradas"),
+        ApiResponse(responseCode = "404", description = "No se encontro esa direccion")
+    ])
     @GetMapping("/geocode")
     fun geocode(@RequestParam direccion: String): ResponseEntity<*> {
         val result: GeocodeResult = geocodingService.geocode(direccion)
@@ -42,6 +48,9 @@ class GeoController(
     }
 
     @Operation(summary = "Solicitudes de servicio abiertas cerca de una coordenada", description = "Radio en kilometros (por defecto 15).")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Lista de solicitudes cercanas")
+    ])
     @GetMapping("/solicitudes-cercanas")
     fun solicitudesCercanas(
         @RequestParam lat: Double,
@@ -60,6 +69,9 @@ class GeoController(
     }
 
     @Operation(summary = "Servicios ofrecidos disponibles cerca de una coordenada", description = "Radio en kilometros (por defecto 15).")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Lista de servicios ofrecidos cercanos")
+    ])
     @GetMapping("/ofertas-cercanas")
     fun ofertasCercanas(
         @RequestParam lat: Double,
@@ -78,6 +90,9 @@ class GeoController(
     }
 
     @Operation(summary = "Cuidadores con ubicacion registrada cerca de una coordenada", description = "Radio en kilometros (por defecto 15).")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Lista de cuidadores cercanos")
+    ])
     @GetMapping("/cuidadores-cercanos")
     fun cuidadoresCercanos(
         @RequestParam lat: Double,

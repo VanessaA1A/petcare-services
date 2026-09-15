@@ -8,6 +8,8 @@ package com.petcare.controller
 import com.petcare.dto.OfferedServiceDTO
 import com.petcare.service.OfferedServiceService
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -17,18 +19,28 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Servicios ofrecidos", description = "Servicios que un cuidador publica para que los dueños los soliciten")
 class OfferedServicesController(private val service: OfferedServiceService) {
     @Operation(summary = "Listar servicios ofrecidos por un cuidador")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Lista de servicios ofrecidos por el cuidador")
+    ])
     @GetMapping("/caregiver/{caregiverId}")
     fun byCaregiver(@PathVariable caregiverId: Int) = ResponseEntity.ok(
         service.byCaregiver(caregiverId).map { OfferedServiceDTO.fromEntity(it) }
     )
 
     @Operation(summary = "Listar servicios ofrecidos disponibles para todos los dueños")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Lista de servicios ofrecidos disponibles")
+    ])
     @GetMapping("/available")
     fun available() = ResponseEntity.ok(
         service.available().map { OfferedServiceDTO.fromEntity(it) }
     )
 
     @Operation(summary = "Obtener un servicio ofrecido por id")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Servicio ofrecido encontrado"),
+        ApiResponse(responseCode = "404", description = "Servicio ofrecido no encontrado")
+    ])
     @GetMapping("/{id}")
     fun byId(@PathVariable id: Int): ResponseEntity<*> {
         val item = service.findById(id)
@@ -37,6 +49,10 @@ class OfferedServicesController(private val service: OfferedServiceService) {
     }
 
     @Operation(summary = "Publicar un nuevo servicio ofrecido")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "201", description = "Servicio ofrecido creado"),
+        ApiResponse(responseCode = "400", description = "caregiverId, serviceTypeId o title faltantes")
+    ])
     @PostMapping
     fun create(@RequestBody request: OfferedServiceDTO): ResponseEntity<*> {
         if (request.caregiverId <= 0 || request.serviceTypeId <= 0 || request.title.isBlank()) {
@@ -47,6 +63,10 @@ class OfferedServicesController(private val service: OfferedServiceService) {
     }
 
     @Operation(summary = "Actualizar un servicio ofrecido")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Servicio ofrecido actualizado"),
+        ApiResponse(responseCode = "404", description = "Servicio ofrecido no encontrado")
+    ])
     @PutMapping("/{id}")
     fun update(@PathVariable id: Int, @RequestBody request: OfferedServiceDTO): ResponseEntity<*> {
         val existing = service.findById(id)
@@ -56,6 +76,9 @@ class OfferedServicesController(private val service: OfferedServiceService) {
     }
 
     @Operation(summary = "Eliminar un servicio ofrecido")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "204", description = "Servicio ofrecido eliminado")
+    ])
     @DeleteMapping("/{id}")
     fun delete(@PathVariable id: Int): ResponseEntity<*> {
         service.delete(id)
