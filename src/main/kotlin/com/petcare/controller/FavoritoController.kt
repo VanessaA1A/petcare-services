@@ -8,6 +8,8 @@ package com.petcare.controller
 import com.petcare.dto.FavoritoDTO
 import com.petcare.service.FavoritoService
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -18,11 +20,18 @@ import org.springframework.web.bind.annotation.*
 class FavoritoController(private val service: FavoritoService) {
 
     @Operation(summary = "Listar los favoritos de un usuario")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Lista de favoritos del usuario")
+    ])
     @GetMapping
     fun listar(@RequestParam usuarioId: Int): ResponseEntity<List<FavoritoDTO>> =
         ResponseEntity.ok(service.listar(usuarioId).map { FavoritoDTO.fromEntity(it) })
 
     @Operation(summary = "Agregar un favorito", description = "Debe incluir cuidador_id o mascota_id ademas de usuario_id.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "201", description = "Favorito agregado"),
+        ApiResponse(responseCode = "400", description = "usuario_id, o cuidador_id/mascota_id faltantes")
+    ])
     @PostMapping
     fun agregar(@RequestBody request: FavoritoDTO): ResponseEntity<*> {
         if (request.usuarioId <= 0 || (request.caregiverId == null && request.petId == null)) {
@@ -34,6 +43,10 @@ class FavoritoController(private val service: FavoritoService) {
     }
 
     @Operation(summary = "Eliminar un favorito")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "204", description = "Favorito eliminado"),
+        ApiResponse(responseCode = "404", description = "Favorito no encontrado")
+    ])
     @DeleteMapping("/{id}")
     fun eliminar(@PathVariable id: Int): ResponseEntity<*> {
         if (!service.existe(id)) {
