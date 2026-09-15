@@ -1,5 +1,7 @@
 # PetCare Services
 
+![Backend CI](https://github.com/VanessaA1A/petcare-services/actions/workflows/build.yml/badge.svg)
+
 Este repositorio ahora contiene un backend completo en Kotlin con Spring Boot.
 
 ## Estructura del proyecto
