@@ -28,5 +28,7 @@ data class WsEvent(
     val title: String,
     val message: String,
     val serviceRequestId: Int? = null,
-    val applicationId: Int? = null
+    val applicationId: Int? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )

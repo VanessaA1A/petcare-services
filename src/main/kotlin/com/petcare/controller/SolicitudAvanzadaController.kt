@@ -8,6 +8,9 @@ package com.petcare.controller
 import com.petcare.dto.ServiceRequestDTO
 import com.petcare.model.ServiceRequest
 import com.petcare.service.MobileServiceRequestService
+import com.petcare.websocket.LiveLocationRegistry
+import com.petcare.websocket.WsEvent
+import com.petcare.websocket.WsEventService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
@@ -18,7 +21,11 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/solicitudes")
 @Tag(name = "Solicitudes Avanzadas", description = "Edicion, extension, reasignacion, historial y busqueda de solicitudes de servicio")
-class SolicitudAvanzadaController(private val service: MobileServiceRequestService) {
+class SolicitudAvanzadaController(
+    private val service: MobileServiceRequestService,
+    private val wsEventService: WsEventService,
+    private val liveLocationRegistry: LiveLocationRegistry
+) {
 
     @Operation(summary = "Editar una solicitud de servicio", description = "Solo se permite mientras la solicitud esta en estado PENDING.")
     @ApiResponses(value = [
@@ -91,6 +98,63 @@ class SolicitudAvanzadaController(private val service: MobileServiceRequestServi
         @RequestParam(required = false) status: String?
     ): ResponseEntity<List<ServiceRequestDTO>> =
         ResponseEntity.ok(service.searchRequests(q, serviceTypeId, status).map { ServiceRequestDTO.fromEntity(it) })
+
+    @Operation(summary = "Actualizar la ubicacion en vivo de un servicio en curso", description = "El cuidador envia su posicion cada pocos segundos mientras el servicio esta EN_PROGRESO (taxi, paseo). Se retransmite al propietario por WebSocket.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Ubicacion registrada"),
+        ApiResponse(responseCode = "400", description = "latitud/longitud faltantes o invalidas"),
+        ApiResponse(responseCode = "404", description = "Solicitud no encontrada")
+    ])
+    @PostMapping("/{id}/ubicacion")
+    fun actualizarUbicacion(@PathVariable id: Int, @RequestBody body: Map<String, Any?>): ResponseEntity<*> {
+        val latitud = (body["latitud"] as? Number)?.toDouble()
+        val longitud = (body["longitud"] as? Number)?.toDouble()
+        if (latitud == null || longitud == null) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "latitud y longitud son requeridas y deben ser numericas"))
+        }
+
+        val request = service.findRequest(id).orElse(null)
+            ?: return ResponseEntity.status(404).body(mapOf("error" to "Solicitud no encontrada"))
+
+        liveLocationRegistry.update(id, latitud, longitud)
+
+        val ownerId = request.ownerId
+        if (ownerId != null) {
+            wsEventService.sendToUser(
+                ownerId,
+                WsEvent(
+                    type = "LOCATION_UPDATE",
+                    recipientUserId = ownerId,
+                    title = "Ubicacion actualizada",
+                    message = "El cuidador actualizo su ubicacion en el servicio #$id",
+                    serviceRequestId = id,
+                    latitude = latitud,
+                    longitude = longitud
+                )
+            )
+        }
+
+        return ResponseEntity.ok(mapOf("latitud" to latitud, "longitud" to longitud))
+    }
+
+    @Operation(summary = "Obtener la ultima ubicacion conocida de un servicio en curso")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Ultima ubicacion conocida"),
+        ApiResponse(responseCode = "404", description = "No hay ubicacion registrada todavia para esta solicitud")
+    ])
+    @GetMapping("/{id}/ubicacion-actual")
+    fun obtenerUbicacionActual(@PathVariable id: Int): ResponseEntity<*> {
+        val location = liveLocationRegistry.get(id)
+            ?: return ResponseEntity.status(404).body(mapOf("error" to "No hay ubicacion registrada todavia para esta solicitud"))
+
+        return ResponseEntity.ok(
+            mapOf(
+                "latitud" to location.latitude,
+                "longitud" to location.longitude,
+                "actualizadoEn" to location.updatedAt
+            )
+        )
+    }
 }
 
 private fun Map<String, Any?>.toPartialServiceRequest(): ServiceRequest {
