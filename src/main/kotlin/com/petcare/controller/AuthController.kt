@@ -13,6 +13,8 @@ import com.petcare.service.AuthService
 import com.petcare.service.OtpService
 import com.petcare.service.UserService
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -36,6 +38,10 @@ class AuthController(
         summary = "Enviar codigo de verificacion (OTP) al correo",
         description = "El codigo vence en 5 minutos. Sin SMTP configurado, el codigo se registra en el log del servidor y tambien se devuelve en la respuesta (modo de prueba)."
     )
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Código generado y enviado (o devuelto en modo de prueba)"),
+        ApiResponse(responseCode = "400", description = "Email inválido o ausente")
+    ])
     @PostMapping("/send-otp")
     fun sendOtp(@RequestBody body: Map<String, String>): ResponseEntity<*> {
         val email = body["email"]?.trim()?.lowercase()
@@ -52,6 +58,10 @@ class AuthController(
     }
 
     @Operation(summary = "Verificar el codigo OTP enviado a un correo")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Código verificado correctamente"),
+        ApiResponse(responseCode = "400", description = "Faltan email/otp, o el código es incorrecto/expirado")
+    ])
     @PostMapping("/verify-otp")
     fun verifyOtp(@RequestBody body: Map<String, String>): ResponseEntity<*> {
         val email = body["email"]?.trim()?.lowercase()
@@ -68,6 +78,10 @@ class AuthController(
     }
 
     @Operation(summary = "Registrar un nuevo usuario", description = "Crea un usuario con email/contraseña y abre una sesión.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "201", description = "Usuario registrado y sesión creada"),
+        ApiResponse(responseCode = "400", description = "Faltan datos, el email es inválido o ya está registrado")
+    ])
     @PostMapping("/registro")
     fun register(@RequestBody body: Map<String, String>): ResponseEntity<*> {
         val email = body["email"]?.trim()
@@ -102,6 +116,12 @@ class AuthController(
     }
 
     @Operation(summary = "Iniciar sesión", description = "Valida credenciales y crea una sesión, registrando la actividad de login.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Login exitoso"),
+        ApiResponse(responseCode = "400", description = "Email y contraseña son requeridos"),
+        ApiResponse(responseCode = "401", description = "Credenciales inválidas"),
+        ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+    ])
     @PostMapping("/login")
     fun login(@RequestBody body: Map<String, String>, @RequestHeader(value = "User-Agent", required = false) userAgent: String?, @RequestHeader(value = "X-Forwarded-For", required = false) xff: String?): ResponseEntity<*> {
         val email = body["email"]?.trim()
@@ -133,6 +153,11 @@ class AuthController(
     }
 
     @Operation(summary = "Solicitar recuperación de contraseña", description = "Genera un token de recuperación temporal para el email indicado.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Token de recuperación generado"),
+        ApiResponse(responseCode = "400", description = "El email es requerido"),
+        ApiResponse(responseCode = "404", description = "No existe un usuario con ese email")
+    ])
     @PostMapping("/recover")
     fun recover(@RequestBody body: Map<String, String>): ResponseEntity<*> {
         val email = body["email"] ?: return ResponseEntity.badRequest().body(mapOf("error" to "email required"))
@@ -147,6 +172,10 @@ class AuthController(
     }
 
     @Operation(summary = "Obtener el usuario autenticado", description = "Devuelve el usuario y la sesión asociados al token Bearer enviado.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Usuario y sesión encontrados"),
+        ApiResponse(responseCode = "401", description = "Token ausente, inválido o sesión no encontrada")
+    ])
     @GetMapping("/me")
     fun me(@RequestHeader(value = "Authorization", required = false) auth: String?): ResponseEntity<*> {
         if (auth == null || !auth.startsWith("Bearer ")) return ResponseEntity.status(401).body(mapOf("error" to "Not authenticated"))

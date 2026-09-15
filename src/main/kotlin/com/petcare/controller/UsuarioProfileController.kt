@@ -15,6 +15,8 @@ import com.petcare.service.NotificationService
 import com.petcare.service.UserService
 import com.petcare.util.RoleUtil
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.core.io.Resource
 import org.springframework.core.io.UrlResource
@@ -42,6 +44,9 @@ class UsuarioProfileController(
         summary = "Verificar el rol confirmado de una cuenta por email",
         description = "Un usuario no puede ser propietario y cuidador a la vez: permite a la app comprobar antes de tiempo si esa cuenta ya confirmo un rol."
     )
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Estado del rol de la cuenta (o existe=false si no hay cuenta con ese email)")
+    ])
     @GetMapping("/verificar-rol")
     fun verificarRol(@RequestParam email: String): ResponseEntity<Map<String, Any?>> {
         val user = userService.findByEmail(email.trim().lowercase()).orElse(null)
@@ -56,6 +61,9 @@ class UsuarioProfileController(
     }
 
     @Operation(summary = "Obtener el perfil del usuario autenticado")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Perfil del usuario autenticado")
+    ])
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
     fun getAuthenticatedProfile(authentication: Authentication): ResponseEntity<UserProfileResponse> {
@@ -66,6 +74,9 @@ class UsuarioProfileController(
     }
 
     @Operation(summary = "Actualizar el perfil del usuario autenticado", description = "Permite editar nombre, apellido y teléfono.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Perfil actualizado")
+    ])
     @PutMapping("/me")
     @PreAuthorize("isAuthenticated()")
     fun updateProfile(authentication: Authentication, @RequestBody request: UpdateProfileRequest): ResponseEntity<UserProfileResponse> {
@@ -83,6 +94,10 @@ class UsuarioProfileController(
         summary = "Registrar/actualizar el token FCM de un usuario",
         description = "Guarda el token de Firebase Cloud Messaging del dispositivo para habilitar notificaciones push. Recibe el id de usuario explicito en el body, igual que el resto de endpoints que consume la app movil (que no envia cabecera Authorization)."
     )
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "204", description = "Token FCM guardado"),
+        ApiResponse(responseCode = "400", description = "usuario_id o token faltantes")
+    ])
     @PostMapping("/fcm-token")
     fun registerFcmToken(@RequestBody request: Map<String, String?>): ResponseEntity<Any> {
         val usuarioId = (request["usuario_id"] ?: request["usuarioId"])?.toIntOrNull()
@@ -99,6 +114,11 @@ class UsuarioProfileController(
         summary = "Activar/desactivar el modo \"no molestar\" de un cuidador",
         description = "Cuando esta activo, el usuario no recibe notificaciones push. Recibe el id de usuario explicito en el body, igual que el resto de endpoints que consume la app movil (que no envia cabecera Authorization)."
     )
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "204", description = "Preferencia \"no molestar\" actualizada"),
+        ApiResponse(responseCode = "400", description = "usuario_id o activo faltantes"),
+        ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+    ])
     @PutMapping("/no-molestar")
     fun actualizarNoMolestar(@RequestBody request: Map<String, Any?>): ResponseEntity<Any> {
         val usuarioId = (request["usuario_id"] ?: request["usuarioId"])?.toString()?.toIntOrNull()
@@ -113,6 +133,9 @@ class UsuarioProfileController(
     }
 
     @Operation(summary = "Subir/reemplazar la foto de perfil del usuario autenticado")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Foto de perfil actualizada")
+    ])
     @PostMapping("/me/foto")
     @PreAuthorize("isAuthenticated()")
     fun uploadProfilePhoto(authentication: Authentication, @RequestParam("file") file: MultipartFile): ResponseEntity<UserProfileResponse> {
@@ -129,6 +152,9 @@ class UsuarioProfileController(
     }
 
     @Operation(summary = "Eliminar la foto de perfil del usuario autenticado")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "204", description = "Foto de perfil eliminada")
+    ])
     @DeleteMapping("/me/foto")
     @PreAuthorize("isAuthenticated()")
     fun deleteProfilePhoto(authentication: Authentication): ResponseEntity<Any> {
@@ -143,6 +169,9 @@ class UsuarioProfileController(
     }
 
     @Operation(summary = "Servir la imagen de perfil de un usuario por id")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Imagen de perfil servida")
+    ])
     @GetMapping("/{id}/foto")
     fun serveProfilePhoto(@PathVariable id: Int): ResponseEntity<*> {
         val user = userService.findById(id).orElseThrow { UserNotFoundException("User not found") }

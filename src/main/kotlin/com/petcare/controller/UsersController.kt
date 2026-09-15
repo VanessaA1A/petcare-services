@@ -12,6 +12,8 @@ import com.petcare.service.GeocodingService
 import com.petcare.service.UserService
 import com.petcare.util.RoleUtil
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -28,6 +30,11 @@ class UsersController(
 ) {
 
     @Operation(summary = "Crear un usuario")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "201", description = "Usuario creado (con sesión, o solo el usuario si la sesión falló)"),
+        ApiResponse(responseCode = "400", description = "Faltan campos requeridos o el email es inválido"),
+        ApiResponse(responseCode = "500", description = "Error inesperado creando el usuario")
+    ])
     @PostMapping
     fun createUser(@RequestBody body: Map<String, Any>): ResponseEntity<*> {
         val username = (body["username"] as? String)?.trim()
@@ -60,10 +67,17 @@ class UsersController(
     }
 
     @Operation(summary = "Listar todos los usuarios")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Lista de usuarios")
+    ])
     @GetMapping
     fun getAll() = ResponseEntity.ok(userService.listAll())
 
     @Operation(summary = "Obtener un usuario por id")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Usuario encontrado"),
+        ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+    ])
     @GetMapping("/{id}")
     fun getById(@PathVariable id: Int): ResponseEntity<*> {
         val u = userService.findById(id)
@@ -71,6 +85,12 @@ class UsersController(
     }
 
     @Operation(summary = "Actualizar un usuario")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Usuario actualizado"),
+        ApiResponse(responseCode = "400", description = "Rol inválido o ya confirmado con otro rol"),
+        ApiResponse(responseCode = "404", description = "Usuario no encontrado"),
+        ApiResponse(responseCode = "500", description = "Error inesperado actualizando el usuario")
+    ])
     @PutMapping("/{id}")
     fun updateUser(@PathVariable id: Int, @RequestBody body: Map<String, Any>): ResponseEntity<*> {
         return try {
@@ -108,6 +128,9 @@ class UsersController(
     }
 
     @Operation(summary = "Eliminar un usuario")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "204", description = "Usuario eliminado")
+    ])
     @DeleteMapping("/{id}")
     fun deleteUser(@PathVariable id: Int): ResponseEntity<*> {
         userService.delete(id)
@@ -115,6 +138,11 @@ class UsersController(
     }
 
     @Operation(summary = "Confirmar el rol de un usuario (propietario o cuidador)", description = "Solo se puede usar una vez por cuenta: un usuario no puede ser propietario y cuidador a la vez.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Rol confirmado/actualizado"),
+        ApiResponse(responseCode = "400", description = "Falta el rol, es inválido, o ya se confirmó otro rol distinto"),
+        ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+    ])
     @PostMapping("/{id}/roles")
     fun assignRoles(@PathVariable id: Int, @RequestBody body: Map<String, String>): ResponseEntity<*> {
         val role = body["role"] ?: body["rol"] ?: return ResponseEntity.badRequest().body(mapOf("error" to "role is required"))
