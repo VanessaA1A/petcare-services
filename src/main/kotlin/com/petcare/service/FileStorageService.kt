@@ -37,11 +37,12 @@ class FileStorageService {
         if (file.size > maxFileSize) {
             throw StorageException("File size exceeds maximum allowed 5MB")
         }
-        if (!allowedContentTypes.contains(file.contentType)) {
+        val contentType = file.contentType
+        if (contentType == null || !allowedContentTypes.contains(contentType)) {
             throw StorageException("File type not allowed")
         }
 
-        val extension = when (file.contentType) {
+        val extension = when (contentType) {
             "image/jpeg" -> "jpg"
             "image/png" -> "png"
             "image/gif" -> "gif"
