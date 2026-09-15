@@ -51,6 +51,55 @@ docker compose up --build
 ```
 Genera un reporte de cobertura con JaCoCo en `build/reports/jacoco/test/html/index.html`.
 
+## Tests de integración
+
+Además de las pruebas unitarias, `src/test/kotlin/com/petcare/IntegrationTest.kt` levanta el
+contexto completo de Spring Boot (`@SpringBootTest`, puerto aleatorio) y ejercita el flujo real de
+la API con `TestRestTemplate` contra una base de datos **PostgreSQL local real** (`petcare_test`):
+registro de un propietario y un cuidador, login (JWT), publicación de una solicitud de servicio,
+postulación del cuidador, aceptación, intercambio de mensajes de chat, marcado del servicio como
+completado y envío de una calificación — verificando en cada paso el código HTTP esperado (incluye
+también un par de casos negativos: 400/401/404).
+
+**Nota importante:** este proyecto **no usa TestContainers** para estas pruebas porque en este
+entorno no hay Docker disponible. En su lugar, las pruebas corren contra una instancia de Postgres
+local de verdad (sin mocks ni base de datos en memoria).
+
+### 1. Preparar la base de datos `petcare_test`
+
+Con PostgreSQL instalado y corriendo localmente:
+
+```powershell
+# Crear la base de datos de pruebas (una sola vez)
+psql -h localhost -U postgres -c "CREATE DATABASE petcare_test;"
+
+# Aplicar el esquema actual
+psql -h localhost -U postgres -d petcare_test -f src/main/resources/schema.sql
+```
+
+Cada vez que `src/main/resources/schema.sql` cambie, hay que volver a aplicarlo sobre
+`petcare_test` de la misma forma.
+
+### 2. Ejecutar las pruebas de integración
+
+`src/test/resources/application-test.yml` apunta a `jdbc:postgresql://localhost:5432/petcare_test`
+con el usuario `postgres`. La contraseña **nunca** se hardcodea en ese archivo: se pasa como
+variable de entorno `DB_PASSWORD` al invocar Gradle.
+
+```powershell
+# PowerShell
+$env:DB_PASSWORD='tu_password_local'; ./gradlew test --tests "*IntegrationTest*"
+```
+
+```bash
+# Git Bash / bash
+DB_PASSWORD=tu_password_local ./gradlew test --tests "*IntegrationTest*"
+```
+
+Cada corrida genera emails/usuarios únicos (con un sufijo de timestamp), así que se puede volver a
+ejecutar la suite varias veces sobre la misma base sin chocar con las restricciones UNIQUE de
+email/username.
+
 ## Documentación de la API (Swagger)
 Con el backend corriendo (local o en Docker), la documentación interactiva está disponible en:
 - `http://localhost:8080/swagger-ui.html`

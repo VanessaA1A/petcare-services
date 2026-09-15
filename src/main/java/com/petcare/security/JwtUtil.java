@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.UUID;
 
 @Component
 public class JwtUtil {
@@ -36,9 +37,15 @@ public class JwtUtil {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + jwtConfig.getExpirationMs());
 
+        // El "jti" (JWT ID) garantiza que cada token generado sea unico incluso si dos tokens se
+        // emiten para el mismo usuario dentro del mismo segundo (p.ej. registro seguido de login
+        // inmediato): sin el, el token firmado salia byte-a-byte identico y el INSERT en
+        // sesiones.token_sesion (columna UNIQUE) fallaba con un 500 por violar esa restriccion
+        // (bug encontrado al escribir las pruebas de integracion del Bloque 6.1).
         return Jwts.builder()
                 .setSubject(userId.toString())
                 .claim("email", email)
+                .setId(UUID.randomUUID().toString())
                 .setIssuedAt(now)
                 .setExpiration(expiry)
                 .signWith(secretKey, SignatureAlgorithm.HS256)

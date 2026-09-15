@@ -100,7 +100,11 @@ class AuthController(
         user.email = email
         user.username = email.substringBefore("@")
         user.passwordHash = passwordEncoder.encode(password)
-        user.rol = "cliente"
+        // "cliente" no es un valor valido del enum rol_usuario (administrador/propietario/gestor) y
+        // hacia fallar el INSERT contra Postgres real (bug encontrado al escribir las pruebas de
+        // integracion del Bloque 6.1). Se usa el mismo default que la columna en BD ('gestor') hasta
+        // que el usuario confirme su rol via POST /api/users/{id}/roles.
+        user.rol = "gestor"
 
         val saved = userService.create(user)
         val token = jwtUtil.generateToken(saved.id!!, saved.email!!)

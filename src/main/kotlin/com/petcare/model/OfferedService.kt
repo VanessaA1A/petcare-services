@@ -26,7 +26,7 @@ data class OfferedService(
 
     var description: String? = null,
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "numeric(10,2)")
     var price: Double? = null,
 
     @Column(name = "is_available", nullable = false)

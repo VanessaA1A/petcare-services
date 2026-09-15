@@ -30,7 +30,7 @@ data class Rating(
     @Column(name = "rated_by_role", nullable = false)
     var ratedByRole: String = "OWNER",
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "numeric(2,1)")
     var score: Double = 5.0,
 
     @Column(columnDefinition = "text")

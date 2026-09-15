@@ -1,0 +1,38 @@
+# Perfil de tests de integracion (Bloque 6). Apunta a una base de datos PostgreSQL LOCAL
+# ("petcare_test"), sin TestContainers ni Docker (ver nota en el README) - se asume que
+# quien corre estos tests tiene Postgres corriendo en localhost:5432 con la base
+# "petcare_test" ya creada y con el esquema aplicado (src/main/resources/schema.sql).
+#
+# DB_PASSWORD debe pasarse como variable de entorno al ejecutar los tests
+# (nunca se hardcodea una contraseña real aqui): p.ej. `DB_PASSWORD=... ./gradlew test`.
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:petcare_test}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  sql:
+    init:
+      mode: never
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    serialization:
+      write-dates-as-timestamps: false
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+# Secreto de prueba: no es una credencial real, solo firma JWT en memoria durante los tests.
+jwt:
+  secret: test-only-jwt-secret-key-not-used-in-production-32chars
+  expirationMs: 604800000
+
+server:
+  port: 0
