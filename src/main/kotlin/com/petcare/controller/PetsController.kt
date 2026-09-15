@@ -6,6 +6,7 @@ package com.petcare.controller
  */
 
 import com.petcare.model.Pet
+import com.petcare.repository.UserRepository
 import com.petcare.service.PetService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -18,7 +19,22 @@ import java.math.BigDecimal
 @RestController
 @RequestMapping("/api/pets")
 @Tag(name = "Mascotas", description = "Gestión de mascotas de los propietarios")
-class PetsController(private val petService: PetService) {
+class PetsController(
+    private val petService: PetService,
+    private val userRepository: UserRepository
+) {
+    /**
+     * Regla de negocio: los cuidadores (rol "gestor") no pueden registrar mascotas, para
+     * garantizar dedicacion exclusiva a las mascotas de sus clientes. Devuelve un mensaje de
+     * error si [ownerId] pertenece a un cuidador, o null si puede registrar mascotas.
+     */
+    private fun rechazarSiEsCuidador(ownerId: Int): String? {
+        val user = userRepository.findById(ownerId).orElse(null) ?: return null
+        if (user.rol == "gestor") {
+            return "Los cuidadores no pueden registrar mascotas. Si deseas registrar una mascota, cambia tu rol a propietario (solo puedes tener un rol a la vez)."
+        }
+        return null
+    }
 
     @Operation(summary = "Listar mascotas de un propietario")
     @ApiResponses(value = [
@@ -41,12 +57,14 @@ class PetsController(private val petService: PetService) {
     @Operation(summary = "Registrar una mascota")
     @ApiResponses(value = [
         ApiResponse(responseCode = "201", description = "Mascota creada"),
-        ApiResponse(responseCode = "400", description = "owner_id, name, breed o size faltantes/inválidos")
+        ApiResponse(responseCode = "400", description = "owner_id, name, breed o size faltantes/inválidos"),
+        ApiResponse(responseCode = "403", description = "El usuario es cuidador y no puede registrar mascotas")
     ])
     @PostMapping
     fun createPet(@RequestBody body: Map<String, Any>): ResponseEntity<*> {
         return try {
             val ownerId = body["owner_id"]?.toString()?.toIntOrNull() ?: throw IllegalArgumentException()
+            rechazarSiEsCuidador(ownerId)?.let { return ResponseEntity.status(403).body(mapOf("error" to it)) }
             val name = body["name"] as? String
             val breed = body["breed"] as? String
             val size = body["size"] as? String
@@ -70,12 +88,14 @@ class PetsController(private val petService: PetService) {
     @Operation(summary = "Registrar varias mascotas de un propietario en una sola llamada")
     @ApiResponses(value = [
         ApiResponse(responseCode = "201", description = "Mascotas creadas"),
-        ApiResponse(responseCode = "400", description = "owner_id/pets faltantes o el payload de mascotas es inválido")
+        ApiResponse(responseCode = "400", description = "owner_id/pets faltantes o el payload de mascotas es inválido"),
+        ApiResponse(responseCode = "403", description = "El usuario es cuidador y no puede registrar mascotas")
     ])
     @PostMapping("/bulk")
     fun createBulk(@RequestBody body: Map<String, Any>): ResponseEntity<*> {
         val owner = body["owner_id"]?.toString()?.toIntOrNull()
             ?: return ResponseEntity.badRequest().body(mapOf("error" to "owner_id and pets are required"))
+        rechazarSiEsCuidador(owner)?.let { return ResponseEntity.status(403).body(mapOf("error" to it)) }
         val petsObj = body["pets"] ?: return ResponseEntity.badRequest().body(mapOf("error" to "owner_id and pets are required"))
         return try {
             // Jackson deserializes a JSON array of objects as List<LinkedHashMap<String, Any>>,

@@ -61,12 +61,15 @@ class OfferedServicesController(
     @Operation(summary = "Publicar un nuevo servicio ofrecido")
     @ApiResponses(value = [
         ApiResponse(responseCode = "201", description = "Servicio ofrecido creado"),
-        ApiResponse(responseCode = "400", description = "caregiverId, serviceTypeId o title faltantes")
+        ApiResponse(responseCode = "400", description = "caregiverId, serviceTypeId o title faltantes, o el texto sugiere venta de animales")
     ])
     @PostMapping
     fun create(@RequestBody request: OfferedServiceDTO): ResponseEntity<*> {
         if (request.caregiverId <= 0 || request.serviceTypeId <= 0 || request.title.isBlank()) {
             return ResponseEntity.badRequest().body(mapOf("error" to "caregiverId, serviceTypeId and title are required"))
+        }
+        if (com.petcare.util.EticaUtil.contieneTextoDeVenta(request.title, request.description)) {
+            return ResponseEntity.badRequest().body(mapOf("error" to com.petcare.util.EticaUtil.MENSAJE_RECHAZO))
         }
         val saved = service.save(request.toEntity())
         return ResponseEntity.status(201).body(OfferedServiceDTO.fromEntity(saved))

@@ -71,7 +71,7 @@ class MobileServiceRequestsController(
     @Operation(summary = "Publicar una nueva solicitud de servicio")
     @ApiResponses(value = [
         ApiResponse(responseCode = "201", description = "Solicitud publicada"),
-        ApiResponse(responseCode = "400", description = "owner_id, pet_id, service_type_id o title faltantes")
+        ApiResponse(responseCode = "400", description = "owner_id, pet_id, service_type_id o title faltantes, o el texto sugiere venta de animales")
     ])
     @PostMapping
     fun create(@RequestBody body: Map<String, Any?>): ResponseEntity<*> {
@@ -80,6 +80,9 @@ class MobileServiceRequestsController(
         if (request.ownerId <= 0 || request.petId <= 0 || request.serviceTypeId <= 0 || request.title.isBlank()) {
             return ResponseEntity.badRequest()
                 .body(mapOf("error" to "owner_id, pet_id, service_type_id and title are required"))
+        }
+        if (com.petcare.util.EticaUtil.contieneTextoDeVenta(request.title, request.description)) {
+            return ResponseEntity.badRequest().body(mapOf("error" to com.petcare.util.EticaUtil.MENSAJE_RECHAZO))
         }
 
         val saved = service.createRequest(request.toEntity())
