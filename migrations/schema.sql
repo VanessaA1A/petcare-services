@@ -1,5 +1,7 @@
 -- PetCare Services schema init
 
+DROP TABLE IF EXISTS avistamientos CASCADE;
+DROP TABLE IF EXISTS alertas_perdida CASCADE;
 DROP TABLE IF EXISTS expediente_medico CASCADE;
 DROP TABLE IF EXISTS evidencias_servicio CASCADE;
 DROP TABLE IF EXISTS valoraciones_tiempo_real CASCADE;
@@ -293,3 +295,33 @@ CREATE TABLE expediente_medico (
 
 CREATE INDEX IF NOT EXISTS idx_expediente_medico_pets_id ON expediente_medico(pets_id);
 CREATE INDEX IF NOT EXISTS idx_expediente_medico_fecha_proxima ON expediente_medico(fecha_proxima);
+
+-- Bloque 12: alerta de mascota perdida y avistamientos reportados por otros usuarios.
+CREATE TABLE alertas_perdida (
+  id serial PRIMARY KEY,
+  pets_id integer REFERENCES pets(id),
+  usuario_id integer REFERENCES usuarios(id),
+  descripcion text,
+  latitud decimal(10,8),
+  longitud decimal(11,8),
+  direccion_texto varchar(255),
+  estado varchar(20) DEFAULT 'ACTIVA' CHECK (estado IN ('ACTIVA', 'ENCONTRADA', 'CERRADA')),
+  fecha_creacion timestamp DEFAULT CURRENT_TIMESTAMP,
+  fecha_cierre timestamp
+);
+
+CREATE TABLE avistamientos (
+  id serial PRIMARY KEY,
+  alerta_id integer REFERENCES alertas_perdida(id) ON DELETE CASCADE,
+  usuario_id integer REFERENCES usuarios(id),
+  latitud decimal(10,8),
+  longitud decimal(11,8),
+  comentario text,
+  imagen_url text,
+  fecha timestamp DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_alertas_perdida_pets_id ON alertas_perdida(pets_id);
+CREATE INDEX IF NOT EXISTS idx_alertas_perdida_usuario_id ON alertas_perdida(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_alertas_perdida_estado ON alertas_perdida(estado);
+CREATE INDEX IF NOT EXISTS idx_avistamientos_alerta_id ON avistamientos(alerta_id);
