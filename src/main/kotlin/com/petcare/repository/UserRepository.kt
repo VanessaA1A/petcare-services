@@ -12,4 +12,5 @@ interface UserRepository : JpaRepository<User, Int> {
     fun findByEmail(email: String): java.util.Optional<User>
     fun findByUsername(username: String): java.util.Optional<User>
     fun findByRolAndLatitudIsNotNullAndLongitudIsNotNull(rol: String): List<User>
+    fun findByRol(rol: String): List<User>
 }

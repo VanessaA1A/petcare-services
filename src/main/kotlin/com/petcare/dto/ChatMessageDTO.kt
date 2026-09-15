@@ -16,6 +16,7 @@ data class ChatMessageDTO(
     @JsonProperty("receiver_id") @Schema(example = "22") val receiverId: Int,
     @Schema(example = "Hola, llego en 10 minutos para el paseo.") val message: String,
     @JsonProperty("is_read") @Schema(example = "false") val isRead: Boolean = false,
+    @JsonProperty("image_url") @Schema(example = "/api/chat/imagen/chat_1001_17_1234567890.jpg") val imageUrl: String? = null,
     @JsonProperty("created_at") @Schema(example = "2026-09-10T14:30:00Z") val createdAt: String? = null
 ) {
     fun toEntity(): ChatMessage = ChatMessage(
@@ -33,6 +34,7 @@ data class ChatMessageDTO(
             receiverId = entity.receiverId ?: 0,
             message = entity.message,
             isRead = entity.isRead,
+            imageUrl = entity.imageUrl,
             createdAt = entity.createdAt?.toString()
         )
     }

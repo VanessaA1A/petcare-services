@@ -9,8 +9,8 @@ import jakarta.persistence.*
 import java.time.OffsetDateTime
 
 @Entity
-@Table(name = "chat_messages")
-data class ChatMessage(
+@Table(name = "emergencias")
+data class Emergencia(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Int? = null,
@@ -18,20 +18,14 @@ data class ChatMessage(
     @Column(name = "service_request_id", nullable = false)
     var serviceRequestId: Int? = null,
 
-    @Column(name = "sender_id", nullable = false)
-    var senderId: Int? = null,
+    @Column(name = "reported_by", nullable = false)
+    var reportedBy: Int? = null,
 
-    @Column(name = "receiver_id", nullable = false)
-    var receiverId: Int? = null,
+    @Column(nullable = false)
+    var tipo: String = "OTRO",
 
-    @Column(columnDefinition = "text", nullable = false)
-    var message: String = "",
-
-    @Column(name = "is_read")
-    var isRead: Boolean = false,
-
-    @Column(name = "image_url")
-    var imageUrl: String? = null,
+    @Column(columnDefinition = "text")
+    var descripcion: String? = null,
 
     @Column(name = "created_at")
     var createdAt: OffsetDateTime? = null

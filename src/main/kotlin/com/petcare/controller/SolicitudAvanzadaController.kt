@@ -6,8 +6,11 @@ package com.petcare.controller
  */
 
 import com.petcare.dto.ServiceRequestDTO
+import com.petcare.dto.ValoracionTiempoRealDTO
 import com.petcare.model.ServiceRequest
 import com.petcare.service.MobileServiceRequestService
+import com.petcare.service.SolicitudNoEnCursoException
+import com.petcare.service.ValoracionTiempoRealService
 import com.petcare.websocket.LiveLocationRegistry
 import com.petcare.websocket.WsEvent
 import com.petcare.websocket.WsEventService
@@ -24,7 +27,8 @@ import org.springframework.web.bind.annotation.*
 class SolicitudAvanzadaController(
     private val service: MobileServiceRequestService,
     private val wsEventService: WsEventService,
-    private val liveLocationRegistry: LiveLocationRegistry
+    private val liveLocationRegistry: LiveLocationRegistry,
+    private val valoracionTiempoRealService: ValoracionTiempoRealService
 ) {
 
     @Operation(summary = "Editar una solicitud de servicio", description = "Solo se permite mientras la solicitud esta en estado PENDING.")
@@ -154,6 +158,31 @@ class SolicitudAvanzadaController(
                 "actualizadoEn" to location.updatedAt
             )
         )
+    }
+
+    @Operation(summary = "Enviar una reaccion en tiempo real", description = "Reaccion rapida (corazon/estrella/pulgar) mientras el servicio esta en curso (estado ACCEPTED). No reemplaza la calificacion final.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "201", description = "Reaccion registrada"),
+        ApiResponse(responseCode = "400", description = "usuario_id o tipo_reaccion invalidos, o la solicitud no esta en curso")
+    ])
+    @PostMapping("/{id}/valorar-durante")
+    fun valorarDurante(@PathVariable id: Int, @RequestBody body: Map<String, Any?>): ResponseEntity<*> {
+        val usuarioId = (body["usuario_id"] as? Number)?.toInt() ?: (body["usuarioId"] as? Number)?.toInt()
+        val tipoReaccion = (body["tipo_reaccion"] as? String) ?: (body["tipoReaccion"] as? String)
+
+        if (usuarioId == null || usuarioId <= 0 || tipoReaccion !in ValoracionTiempoRealDTO.TIPOS_VALIDOS) {
+            return ResponseEntity.badRequest().body(
+                mapOf("error" to "usuario_id es requerido y tipo_reaccion debe ser uno de ${ValoracionTiempoRealDTO.TIPOS_VALIDOS}")
+            )
+        }
+
+        return try {
+            val dto = ValoracionTiempoRealDTO(serviceRequestId = id, usuarioId = usuarioId, tipoReaccion = tipoReaccion!!)
+            val saved = valoracionTiempoRealService.valorar(dto.toEntity())
+            ResponseEntity.status(201).body(ValoracionTiempoRealDTO.fromEntity(saved))
+        } catch (ex: SolicitudNoEnCursoException) {
+            ResponseEntity.badRequest().body(mapOf("error" to ex.message))
+        }
     }
 }
 

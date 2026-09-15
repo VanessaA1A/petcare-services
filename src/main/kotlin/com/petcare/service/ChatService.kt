@@ -57,4 +57,7 @@ class ChatService(
     }
 
     fun noLeidos(userId: Int): Int = repository.countByReceiverIdAndIsReadFalse(userId)
+
+    fun imagenes(serviceRequestId: Int): List<ChatMessage> =
+        repository.findByServiceRequestIdAndImageUrlIsNotNullOrderByCreatedAtAsc(serviceRequestId)
 }
