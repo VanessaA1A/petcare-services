@@ -1,5 +1,10 @@
 -- PetCare Services schema init
 
+DROP TABLE IF EXISTS verificaciones CASCADE;
+DROP TABLE IF EXISTS chat_messages CASCADE;
+DROP TABLE IF EXISTS favoritos CASCADE;
+DROP TABLE IF EXISTS notas_usuario CASCADE;
+DROP TABLE IF EXISTS busquedas_guardadas CASCADE;
 DROP TABLE IF EXISTS password_recovery CASCADE;
 DROP TABLE IF EXISTS actividades CASCADE;
 DROP TABLE IF EXISTS sesiones CASCADE;
@@ -15,6 +20,10 @@ CREATE TABLE usuarios (
   email text UNIQUE NOT NULL,
   password_hash text NOT NULL,
   rol rol_usuario NOT NULL DEFAULT 'gestor',
+  rol_confirmado boolean NOT NULL DEFAULT false,
+  latitud double precision,
+  longitud double precision,
+  direccion_texto text,
   nombre text,
   apellido text,
   telefono text,
@@ -26,7 +35,11 @@ CREATE TABLE usuarios (
   reset_token text,
   reset_token_expires timestamptz,
   fcm_token text,
-  no_molestar boolean DEFAULT false
+  no_molestar boolean DEFAULT false,
+  two_factor_enabled boolean DEFAULT false,
+  two_factor_secret varchar(255),
+  fecha_ultimo_cambio_password timestamptz,
+  bloqueado_hasta timestamptz
 );
 
 CREATE TABLE sesiones (
@@ -107,12 +120,16 @@ CREATE TABLE service_requests (
   source_type text NOT NULL DEFAULT 'OPEN',
   latitude double precision,
   longitude double precision,
+  motivo_cancelacion text,
+  fecha_expiracion timestamptz,
   created_at timestamptz DEFAULT NOW(),
   updated_at timestamptz DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_service_requests_owner_id ON service_requests(owner_id);
 CREATE INDEX IF NOT EXISTS idx_service_requests_status ON service_requests(status);
+CREATE INDEX IF NOT EXISTS idx_service_requests_lat_lng ON service_requests(latitude, longitude);
+CREATE INDEX IF NOT EXISTS idx_service_requests_fecha_creacion ON service_requests(created_at);
 
 CREATE TABLE service_applications (
   id serial PRIMARY KEY,
@@ -138,9 +155,64 @@ CREATE TABLE ratings (
   rated_by_role text NOT NULL DEFAULT 'OWNER',
   score numeric(2,1) NOT NULL,
   comment text,
+  respuesta_calificacion text,
   created_at timestamptz DEFAULT NOW(),
   UNIQUE(service_request_id, rated_by_role)
 );
 
 CREATE INDEX IF NOT EXISTS idx_ratings_caregiver_id ON ratings(caregiver_id);
 CREATE INDEX IF NOT EXISTS idx_ratings_owner_id ON ratings(owner_id);
+
+CREATE TABLE chat_messages (
+  id serial PRIMARY KEY,
+  service_request_id integer NOT NULL REFERENCES service_requests(id) ON DELETE CASCADE,
+  sender_id integer NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  receiver_id integer NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  message text NOT NULL,
+  is_read boolean NOT NULL DEFAULT false,
+  created_at timestamptz DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_messages_service_request_id ON chat_messages(service_request_id);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_receiver_id ON chat_messages(receiver_id);
+
+CREATE TABLE verificaciones (
+  id serial PRIMARY KEY,
+  email text NOT NULL,
+  otp text NOT NULL,
+  fecha_expiracion timestamptz NOT NULL,
+  usado boolean NOT NULL DEFAULT false,
+  creado_en timestamptz DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_verificaciones_email ON verificaciones(email);
+
+CREATE TABLE favoritos (
+  id serial PRIMARY KEY,
+  usuario_id integer NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  cuidador_id integer REFERENCES usuarios(id) ON DELETE CASCADE,
+  mascota_id integer REFERENCES pets(id) ON DELETE CASCADE,
+  fecha_agregado timestamptz DEFAULT NOW(),
+  CONSTRAINT unique_favorito_cuidador UNIQUE(usuario_id, cuidador_id),
+  CONSTRAINT unique_favorito_mascota UNIQUE(usuario_id, mascota_id),
+  CHECK (cuidador_id IS NOT NULL OR mascota_id IS NOT NULL)
+);
+
+CREATE INDEX IF NOT EXISTS idx_favoritos_usuario ON favoritos(usuario_id);
+
+CREATE TABLE notas_usuario (
+  id serial PRIMARY KEY,
+  propietario_id integer NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  objetivo_id integer NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  nota text NOT NULL,
+  fecha_creacion timestamptz DEFAULT NOW(),
+  fecha_actualizacion timestamptz DEFAULT NOW()
+);
+
+CREATE TABLE busquedas_guardadas (
+  id serial PRIMARY KEY,
+  usuario_id integer NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  nombre text NOT NULL,
+  filtros_json jsonb NOT NULL,
+  fecha_creacion timestamptz DEFAULT NOW()
+);
