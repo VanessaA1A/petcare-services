@@ -84,9 +84,10 @@ registran mascotas propias, y no se permite vender animales en la plataforma.
 4. **Aceptar/gestionar servicios**: chat con el dueño, marcar el servicio como iniciado
    (evidencia ANTES), y como terminado (evidencia DESPUÉS).
 5. **Modo "no molestar"**: silenciar notificaciones push temporalmente.
-6. **Badge**: etiqueta calculada automáticamente (NUEVO → EN_CRECIMIENTO → CONFIABLE →
-   EXPERIMENTADO → ELITE, o EN_OBSERVACIÓN) según servicios completados, calificación promedio
-   y cancelaciones — visible en el perfil y en las tarjetas de ofertas.
+6. **Badge**: etiqueta calculada automáticamente en el backend (NUEVO → EN_CRECIMIENTO →
+   CONFIABLE → EXPERIMENTADO → ELITE, o EN_OBSERVACIÓN) según servicios completados,
+   calificación promedio y cancelaciones (`usuarios.badge`). Todavía no está expuesta en
+   ninguna pantalla de la app — ver [Limitaciones Conocidas](#14-limitaciones-conocidas).
 7. **Botón de emergencia**: reportar una emergencia durante un servicio activo.
 8. **Expediente médico del perro (solo lectura)**: desde la tarjeta de una solicitud PENDIENTE
    (antes de ofertar), desde el detalle de un servicio ACCEPTED o ya COMPLETED, o desde la
@@ -333,6 +334,10 @@ only"). Para una key real, ver
 - Modo "no molestar"
 - Modo oscuro, soporte para inglés, accesibilidad (WCAG AA), caché offline del chat
 - Panel de administración con métricas y gráficos
+- Comparación de ofertas de cuidadores lado a lado, resumen visual de un servicio completado
+  (fotos antes/después y duración), centro de notificaciones in-app, estadísticas personales
+  (cuidador y propietario), búsqueda local, ayuda/FAQ, configuración (modo oscuro, no molestar,
+  privacidad), indicador de conexión y botón de emergencia flotante durante un servicio activo
 - Tests de integración (backend contra PostgreSQL real) y de red (Android con MockWebServer)
 - CI/CD con GitHub Actions en ambos repos
 
@@ -436,6 +441,11 @@ de especies (ver estudios de la UICN y TRAFFIC sobre comercio ilegal de fauna en
   el backend no tiene todavía un concepto de horario de disponibilidad del cuidador.
 - No hay rate limiting en la API (ver sección 9, Seguridad) — pendiente antes de exponerla
   públicamente sin un proxy/gateway que lo aplique.
+- El badge del cuidador (`usuarios.badge`) existe y se calcula en el backend, pero todavía no
+  está expuesto en ningún DTO ni pantalla de la app móvil.
+- No hay un endpoint propio de estadísticas por usuario (servicios completados, tasa de
+  aceptación, gasto, etc.) — las pantallas de estadísticas de la app las calculan del lado del
+  cliente combinando el historial, las calificaciones y los favoritos ya existentes.
 - No existe un flujo dedicado para que un cuidador o propietario reporte que la otra parte "no
   se presentó" a un servicio agendado; hoy la única vía es cancelar la solicitud y, si aplica,
   reportar una emergencia o dejarlo reflejado en la calificación.
@@ -463,6 +473,9 @@ de especies (ver estudios de la UICN y TRAFFIC sobre comercio ilegal de fauna en
   dedicada.
 - Adjuntar fotos directamente a los avistamientos de mascota perdida.
 - Rate limiting y hardening general de la API antes de un despliegue público.
+- Exponer el badge del cuidador en la app (perfil y tarjetas de ofertas).
+- Un endpoint propio de estadísticas por usuario, para no depender de cálculos aproximados del
+  lado del cliente (tasa de aceptación, gasto, tiempo de respuesta).
 
 ---
 
