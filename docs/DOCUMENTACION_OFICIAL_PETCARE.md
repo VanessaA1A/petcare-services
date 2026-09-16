@@ -86,8 +86,9 @@ registran mascotas propias, y no se permite vender animales en la plataforma.
 5. **Modo "no molestar"**: silenciar notificaciones push temporalmente.
 6. **Badge**: etiqueta calculada automáticamente en el backend (NUEVO → EN_CRECIMIENTO →
    CONFIABLE → EXPERIMENTADO → ELITE, o EN_OBSERVACIÓN) según servicios completados,
-   calificación promedio y cancelaciones (`usuarios.badge`). Todavía no está expuesta en
-   ninguna pantalla de la app — ver [Limitaciones Conocidas](#14-limitaciones-conocidas).
+   calificación promedio y cancelaciones (`usuarios.badge`, `GET /api/usuarios/{id}/badge`).
+   Visible en el perfil del cuidador (propio y público), en las tarjetas de cuidadores
+   interesados y al comparar ofertas — no todavía en el feed completo de ofertas.
 7. **Botón de emergencia**: reportar una emergencia durante un servicio activo.
 8. **Expediente médico del perro (solo lectura)**: desde la tarjeta de una solicitud PENDIENTE
    (antes de ofertar), desde el detalle de un servicio ACCEPTED o ya COMPLETED, o desde la
@@ -441,8 +442,13 @@ de especies (ver estudios de la UICN y TRAFFIC sobre comercio ilegal de fauna en
   el backend no tiene todavía un concepto de horario de disponibilidad del cuidador.
 - No hay rate limiting en la API (ver sección 9, Seguridad) — pendiente antes de exponerla
   públicamente sin un proxy/gateway que lo aplique.
-- El badge del cuidador (`usuarios.badge`) existe y se calcula en el backend, pero todavía no
-  está expuesto en ningún DTO ni pantalla de la app móvil.
+- El badge del cuidador es visible en el perfil (propio y público), en las tarjetas de
+  cuidadores interesados y al comparar ofertas, pero no todavía en el feed completo de ofertas
+  del propietario (`OwnerFeedScreen`) — para eso el endpoint de listado de ofertas tendría que
+  incluir el badge directamente, en vez de depender de una consulta en vivo por tarjeta.
+- El deep link `petcare://solicitud/{id}` funciona al compartir (abre la app y enfoca la
+  solicitud si hay sesión iniciada), pero no hace nada útil sin sesión — se ignora en silencio
+  en vez de, por ejemplo, ofrecer iniciar sesión primero.
 - No hay un endpoint propio de estadísticas por usuario (servicios completados, tasa de
   aceptación, gasto, etc.) — las pantallas de estadísticas de la app las calculan del lado del
   cliente combinando el historial, las calificaciones y los favoritos ya existentes.
@@ -473,7 +479,8 @@ de especies (ver estudios de la UICN y TRAFFIC sobre comercio ilegal de fauna en
   dedicada.
 - Adjuntar fotos directamente a los avistamientos de mascota perdida.
 - Rate limiting y hardening general de la API antes de un despliegue público.
-- Exponer el badge del cuidador en la app (perfil y tarjetas de ofertas).
+- Exponer el badge del cuidador también en el feed completo de ofertas (`OwnerFeedScreen`),
+  vía el endpoint de listado en vez de una consulta en vivo por tarjeta.
 - Un endpoint propio de estadísticas por usuario, para no depender de cálculos aproximados del
   lado del cliente (tasa de aceptación, gasto, tiempo de respuesta).
 
