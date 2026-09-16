@@ -22,6 +22,7 @@ class FileStorageService {
     private val chatBaseDir: Path = Paths.get("uploads/chat").toAbsolutePath().normalize()
     private val evidenciasBaseDir: Path = Paths.get("uploads/evidencias").toAbsolutePath().normalize()
     private val carnetsBaseDir: Path = Paths.get("uploads/carnets").toAbsolutePath().normalize()
+    private val avistamientosBaseDir: Path = Paths.get("uploads/avistamientos").toAbsolutePath().normalize()
     private val maxFileSize: Long = 5 * 1024 * 1024
     private val allowedContentTypes = setOf("image/jpeg", "image/png", "image/gif", "image/webp")
 
@@ -31,6 +32,7 @@ class FileStorageService {
             Files.createDirectories(chatBaseDir)
             Files.createDirectories(evidenciasBaseDir)
             Files.createDirectories(carnetsBaseDir)
+            Files.createDirectories(avistamientosBaseDir)
         } catch (ex: IOException) {
             throw StorageException("Could not create storage directory")
         }
@@ -228,6 +230,53 @@ class FileStorageService {
         val cleaned = StringUtils.cleanPath(filename)
         val target = carnetsBaseDir.resolve(cleaned).normalize()
         if (!target.startsWith(carnetsBaseDir)) {
+            throw StorageException("Cannot read file outside permitted directory")
+        }
+        if (Files.notExists(target) || !Files.isReadable(target)) {
+            throw StorageException("File not found")
+        }
+        return target
+    }
+
+    fun storeAvistamientoImage(alertaId: Int, file: MultipartFile): String {
+        if (file.isEmpty) {
+            throw StorageException("File is empty")
+        }
+        if (file.size > maxFileSize) {
+            throw StorageException("File size exceeds maximum allowed 5MB")
+        }
+        val contentType = file.contentType
+        if (contentType == null || !allowedContentTypes.contains(contentType)) {
+            throw StorageException("File type not allowed")
+        }
+
+        val extension = when (contentType) {
+            "image/jpeg" -> "jpg"
+            "image/png" -> "png"
+            "image/gif" -> "gif"
+            "image/webp" -> "webp"
+            else -> throw StorageException("Unsupported image type")
+        }
+
+        val filename = "avistamiento_${alertaId}_${Instant.now().toEpochMilli()}.$extension"
+        val targetLocation = avistamientosBaseDir.resolve(StringUtils.cleanPath(filename))
+        if (!targetLocation.normalize().startsWith(avistamientosBaseDir)) {
+            throw StorageException("Cannot store file outside the permitted directory")
+        }
+
+        try {
+            Files.copy(file.inputStream, targetLocation)
+        } catch (ex: IOException) {
+            throw StorageException("Could not store file: ${ex.message}")
+        }
+
+        return filename
+    }
+
+    fun loadAvistamientoImage(filename: String): Path {
+        val cleaned = StringUtils.cleanPath(filename)
+        val target = avistamientosBaseDir.resolve(cleaned).normalize()
+        if (!target.startsWith(avistamientosBaseDir)) {
             throw StorageException("Cannot read file outside permitted directory")
         }
         if (Files.notExists(target) || !Files.isReadable(target)) {

@@ -32,8 +32,11 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.core.io.ByteArrayResource
 import org.springframework.http.client.JdkClientHttpRequestFactory
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.util.LinkedMultiValueMap
+import org.springframework.util.MultiValueMap
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
@@ -71,6 +74,21 @@ class IntegrationTest {
 
     private fun get(path: String, token: String? = null): ResponseEntity<String> =
         restTemplate.exchange(path, HttpMethod.GET, HttpEntity<Any>(headers(token)), String::class.java)
+
+    private fun postMultipart(path: String, parts: Map<String, Any>, token: String? = null): ResponseEntity<String> {
+        val body: MultiValueMap<String, Any> = LinkedMultiValueMap()
+        parts.forEach { (key, value) -> body.add(key, value) }
+        val h = HttpHeaders()
+        h.contentType = MediaType.MULTIPART_FORM_DATA
+        if (token != null) h.setBearerAuth(token)
+        return restTemplate.exchange(path, HttpMethod.POST, HttpEntity(body, h), String::class.java)
+    }
+
+    /** Un archivo en memoria valido para subir como parte "foto" en un request multipart. */
+    private fun fakeImagePart(filename: String = "avistamiento.jpg"): ByteArrayResource =
+        object : ByteArrayResource(byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 0xE0.toByte())) {
+            override fun getFilename(): String = filename
+        }
 
     private fun json(response: ResponseEntity<String>): JsonNode = mapper.readTree(response.body ?: "{}")
 
@@ -398,13 +416,6 @@ class IntegrationTest {
         val caregiverId = registrarUsuario("disponibilidad-cg", "cuidador")
         val ownerId = registrarUsuario("disponibilidad-owner", "propietario")
 
-        // GET /api/calendario exige un JWT valido (a diferencia del resto de la API, que confia
-        // en el usuario_id que manda el cliente) - hace falta loguearse para obtener un token.
-        val caregiverEmail = "disponibilidad-cg-$suffix@petcare-test.local"
-        val loginRes = post("/api/auth/login", mapOf("email" to caregiverEmail, "password" to password))
-        assertEquals(HttpStatus.OK, loginRes.statusCode)
-        val caregiverToken = json(loginRes)["session"]["tokenSesion"].asText()
-
         val hoy = java.time.LocalDate.now()
         val diaSemana = hoy.dayOfWeek.value - 1 // lunes=0 ... domingo=6
 
@@ -442,7 +453,7 @@ class IntegrationTest {
         assertEquals(2, json(listarRes).size())
 
         // El calendario del mes actual debe incluir hoy con el rango publicado.
-        val calendarioRes = get("/api/calendario?usuario_id=$caregiverId&mes=${hoy.monthValue}&anio=${hoy.year}", caregiverToken)
+        val calendarioRes = get("/api/calendario?usuario_id=$caregiverId&mes=${hoy.monthValue}&anio=${hoy.year}")
         assertEquals(HttpStatus.OK, calendarioRes.statusCode)
         val disponibilidadCalendario = json(calendarioRes)["disponibilidad"]
         val entradaHoy = disponibilidadCalendario.find { it["fecha"].asText() == hoy.toString() }
@@ -461,5 +472,67 @@ class IntegrationTest {
 
         val listarTrasEliminarRes = get("/api/cuidadores/$caregiverId/disponibilidad")
         assertEquals(1, json(listarTrasEliminarRes).size())
+    }
+
+    @Test
+    fun `avistamiento de mascota perdida se sube con foto real y se puede descargar despues`() {
+        val suffix = uniqueSuffix()
+        val password = "Passw0rd!23"
+
+        val ownerEmail = "avistamiento-owner-$suffix@petcare-test.local"
+        val ownerRegRes = post("/api/auth/registro", mapOf("email" to ownerEmail, "password" to password))
+        assertEquals(HttpStatus.CREATED, ownerRegRes.statusCode)
+        val ownerId = json(ownerRegRes)["user"]["id"].asInt()
+        post("/api/users/$ownerId/roles", mapOf("role" to "propietario"))
+
+        val reporterEmail = "avistamiento-reporter-$suffix@petcare-test.local"
+        val reporterRegRes = post("/api/auth/registro", mapOf("email" to reporterEmail, "password" to password))
+        assertEquals(HttpStatus.CREATED, reporterRegRes.statusCode)
+        val reporterId = json(reporterRegRes)["user"]["id"].asInt()
+
+        val petRes = post(
+            "/api/pets",
+            mapOf("owner_id" to ownerId, "name" to "Rocky", "species" to "Perro", "breed" to "Mestizo", "size" to "MEDIANO", "age" to 2)
+        )
+        assertEquals(HttpStatus.CREATED, petRes.statusCode)
+        val petId = json(petRes)["id"].asInt()
+
+        val alertaRes = post(
+            "/api/alertas-perdida",
+            mapOf("pets_id" to petId, "usuario_id" to ownerId, "descripcion" to "Se escapo por el porton", "latitud" to 12.1364, "longitud" to -86.2514)
+        )
+        assertEquals(HttpStatus.CREATED, alertaRes.statusCode)
+        val alertaId = json(alertaRes)["id"].asInt()
+
+        // Sin foto, multipart sin la parte "foto" requerida -> 400 (Spring rechaza el @RequestParam faltante).
+        val sinFotoRes = postMultipart(
+            "/api/alertas-perdida/$alertaId/avistamiento",
+            mapOf("usuario_id" to reporterId, "comentario" to "Lo vi cerca del parque")
+        )
+        assertTrue(sinFotoRes.statusCode.is4xxClientError, "sin foto deberia responder un error 4xx")
+
+        // Con foto real (multipart) -> 201, con imagen_url apuntando al endpoint de descarga.
+        val conFotoRes = postMultipart(
+            "/api/alertas-perdida/$alertaId/avistamiento",
+            mapOf(
+                "usuario_id" to reporterId,
+                "comentario" to "Lo vi cerca del parque",
+                "latitud" to 12.1400,
+                "longitud" to -86.2500,
+                "foto" to fakeImagePart()
+            )
+        )
+        assertEquals(HttpStatus.CREATED, conFotoRes.statusCode)
+        val avistamientoJson = json(conFotoRes)
+        val imagenUrl = avistamientoJson["imagen_url"].asText()
+        assertTrue(imagenUrl.startsWith("/api/alertas-perdida/avistamiento/foto/"), "imagen_url deberia apuntar al endpoint de descarga")
+
+        // La imagen subida se puede descargar de vuelta.
+        val descargaRes = get(imagenUrl)
+        assertEquals(HttpStatus.OK, descargaRes.statusCode)
+
+        val listarRes = get("/api/alertas-perdida/$alertaId/avistamientos")
+        assertEquals(HttpStatus.OK, listarRes.statusCode)
+        assertEquals(1, json(listarRes).size())
     }
 }

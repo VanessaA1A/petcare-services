@@ -4,6 +4,10 @@ node_modules/
 .gradle/
 /build/
 
+# Archivos subidos en runtime (fotos de perfil, chat, evidencias, carnets, avistamientos) -
+# se generan localmente al correr la app o los tests de integracion, nunca deben commitearse.
+/uploads/
+
 # IDE & local
 .idea/
 .vscode/

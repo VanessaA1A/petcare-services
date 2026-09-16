@@ -56,6 +56,14 @@ public class SecurityConfig {
                     .requestMatchers("/api/usuarios/verificar-rol").permitAll()
                     .requestMatchers("/api/usuarios/fcm-token").permitAll()
                     .requestMatchers("/api/cuidadores/**").permitAll()
+                    .requestMatchers("/api/alertas-perdida/**").permitAll()
+                    // Bloque 9: igual que el resto de la API, el cliente movil no adjunta un JWT en
+                    // ningun otro endpoint de negocio (confia en el usuario_id que manda el cliente,
+                    // ver RetrofitClient.kt) - sin esta linea, /api/calendario y /api/cuidadores/**
+                    // caian en el "authenticated()" generico de abajo y CalendarioScreen.kt nunca
+                    // podia cargar nada en la app real (bug preexistente, encontrado al escribir el
+                    // test de integracion de disponibilidad del cuidador).
+                    .requestMatchers("/api/calendario").permitAll()
                     .requestMatchers("/api/usuarios/no-molestar").permitAll()
                     .requestMatchers("/api/usuarios/{id}/foto").permitAll()
                     // Bloque 13: login propio del panel de administracion. La pagina HTML (/admin/**)
