@@ -333,7 +333,7 @@ only"). Para una key real, ver
   antes de ofertar (solicitud PENDIENTE), y durante/después de un servicio aceptado
 - Alerta de mascota perdida con avistamientos y notificación por proximidad
 - Modo "no molestar"
-- Modo oscuro, soporte para inglés, accesibilidad (WCAG AA), caché offline del chat
+- Modo oscuro, accesibilidad (WCAG AA), caché offline del chat
 - Panel de administración con métricas y gráficos
 - Comparación de ofertas de cuidadores lado a lado, resumen visual de un servicio completado
   (fotos antes/después y duración), centro de notificaciones in-app, estadísticas personales
@@ -385,6 +385,9 @@ de especies (ver estudios de la UICN y TRAFFIC sobre comercio ilegal de fauna en
   el alcance (razas, tamaños, necesidades de cuidado) para un proyecto académico, y evita la
   complejidad de reglas de negocio distintas por especie (p. ej. requisitos veterinarios muy
   distintos entre perros, gatos y otras mascotas).
+- **¿Por qué la app es solo en español?** El público objetivo (Nicaragua) es hispanohablante;
+  mantener un único idioma evita el costo de traducir y mantener sincronizados los textos de
+  la interfaz en cada cambio, sin aportar valor real al usuario final del proyecto.
 - **¿Por qué Spring Boot y no Node.js?** Tipado fuerte (Kotlin), un ecosistema maduro para
   JPA/Hibernate + PostgreSQL, Spring Security con JWT ya integrado, y springdoc-openapi para
   documentación automática — reduce la superficie de bugs de un proyecto grande frente a un
