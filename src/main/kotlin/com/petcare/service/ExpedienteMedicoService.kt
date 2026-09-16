@@ -8,6 +8,9 @@ package com.petcare.service
 import com.petcare.model.ExpedienteMedico
 import com.petcare.repository.ExpedienteMedicoRepository
 import com.petcare.repository.PetRepository
+import com.petcare.repository.ServiceApplicationRepository
+import com.petcare.repository.ServiceRequestRepository
+import com.petcare.repository.UserRepository
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
@@ -20,11 +23,41 @@ class MascotaNoEncontradaException(message: String) : RuntimeException(message)
 class ExpedienteMedicoService(
     private val repository: ExpedienteMedicoRepository,
     private val petRepository: PetRepository,
-    private val notificationService: NotificationService
+    private val notificationService: NotificationService,
+    private val userRepository: UserRepository,
+    private val serviceRequestRepository: ServiceRequestRepository,
+    private val serviceApplicationRepository: ServiceApplicationRepository
 ) {
     private val logger = LoggerFactory.getLogger(ExpedienteMedicoService::class.java)
 
     fun listar(petsId: Int): List<ExpedienteMedico> = repository.findByPetsIdOrderByFechaDesc(petsId)
+
+    /**
+     * El dueno de la mascota siempre puede ver su expediente. Un cuidador (rol "gestor") tambien
+     * puede verlo en modo lectura si: (a) hay una solicitud PENDIENTE para esa mascota (para
+     * decidir si ofertar antes de comprometerse), o (b) tiene una postulacion ACCEPTED o
+     * COMPLETED para esa mascota (durante o despues de haber prestado el servicio).
+     */
+    fun puedeVer(usuarioId: Int, mascotaId: Int): Boolean {
+        val pet = petRepository.findById(mascotaId).orElse(null) ?: return false
+        if (pet.ownerId == usuarioId) return true
+
+        val usuario = userRepository.findById(usuarioId).orElse(null) ?: return false
+        if (usuario.rol != "gestor") return false
+
+        val solicitudesConEsaMascota = serviceRequestRepository.findCandidatesByPetId(mascotaId)
+            .filter { solicitud ->
+                solicitud.petId == mascotaId ||
+                    solicitud.petIds?.split(",")?.map { it.trim() }?.contains(mascotaId.toString()) == true
+            }
+        if (solicitudesConEsaMascota.any { it.status == "PENDING" }) return true
+
+        val solicitudIds = solicitudesConEsaMascota.mapNotNull { it.id }
+        if (solicitudIds.isEmpty()) return false
+        return serviceApplicationRepository.findByServiceRequestIdInAndCaregiverIdAndStatusIn(
+            solicitudIds, usuarioId, listOf("ACCEPTED", "COMPLETED")
+        ).isNotEmpty()
+    }
 
     /** Solo el dueno de la mascota puede crear/editar/eliminar entradas del expediente. */
     private fun verificarDueno(petsId: Int, usuarioId: Int) {

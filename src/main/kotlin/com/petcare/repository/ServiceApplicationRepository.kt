@@ -14,4 +14,9 @@ interface ServiceApplicationRepository : JpaRepository<ServiceApplication, Int> 
     fun findByServiceRequestIdOrderByCreatedAtDesc(serviceRequestId: Int): List<ServiceApplication>
     fun findByServiceRequestIdAndCaregiverId(serviceRequestId: Int, caregiverId: Int): ServiceApplication?
     fun findByServiceRequestIdAndStatus(serviceRequestId: Int, status: String): ServiceApplication?
+    fun findByServiceRequestIdInAndCaregiverIdAndStatusIn(
+        serviceRequestIds: Collection<Int>,
+        caregiverId: Int,
+        statuses: Collection<String>
+    ): List<ServiceApplication>
 }

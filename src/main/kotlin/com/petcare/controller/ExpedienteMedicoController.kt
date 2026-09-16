@@ -34,11 +34,23 @@ class ExpedienteMedicoController(
     private val service: ExpedienteMedicoService,
     private val fileStorageService: FileStorageService
 ) {
-    @Operation(summary = "Listar el expediente medico de una mascota")
-    @ApiResponses(value = [ApiResponse(responseCode = "200", description = "Entradas del expediente, mas recientes primero")])
+    @Operation(
+        summary = "Listar el expediente medico de una mascota",
+        description = "El dueno de la mascota siempre puede verlo. Un cuidador puede verlo en modo lectura " +
+            "antes de ofertar (si hay una solicitud PENDIENTE para esa mascota), o durante/despues de un " +
+            "servicio (postulacion ACCEPTED o COMPLETED para esa mascota)."
+    )
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Entradas del expediente, mas recientes primero"),
+        ApiResponse(responseCode = "403", description = "El usuario no tiene permiso para ver este expediente (o la mascota no existe)")
+    ])
     @GetMapping("/{id}/expediente")
-    fun listar(@PathVariable id: Int): ResponseEntity<List<ExpedienteMedicoDTO>> =
-        ResponseEntity.ok(service.listar(id).map { ExpedienteMedicoDTO.fromEntity(it) })
+    fun listar(@PathVariable id: Int, @RequestParam("usuario_id") usuarioId: Int): ResponseEntity<*> {
+        if (!service.puedeVer(usuarioId, id)) {
+            return ResponseEntity.status(403).body(mapOf("error" to "No tienes permiso para ver el expediente medico de esta mascota"))
+        }
+        return ResponseEntity.ok(service.listar(id).map { ExpedienteMedicoDTO.fromEntity(it) })
+    }
 
     @Operation(
         summary = "Agregar una entrada al expediente medico",

@@ -289,4 +289,94 @@ class IntegrationTest {
         val res = post("/api/service-requests", mapOf("title" to "solicitud incompleta"))
         assertEquals(HttpStatus.BAD_REQUEST, res.statusCode)
     }
+
+    @Test
+    fun `expediente medico visible para el dueno y para el cuidador antes, durante y despues del servicio`() {
+        val suffix = uniqueSuffix()
+        val password = "Passw0rd!23"
+
+        fun registrarUsuario(prefijo: String, rol: String): Int {
+            val email = "$prefijo-$suffix@petcare-test.local"
+            val regRes = post("/api/auth/registro", mapOf("email" to email, "password" to password))
+            assertEquals(HttpStatus.CREATED, regRes.statusCode)
+            val id = json(regRes)["user"]["id"].asInt()
+            val roleRes = post("/api/users/$id/roles", mapOf("role" to rol))
+            assertEquals(HttpStatus.OK, roleRes.statusCode)
+            return id
+        }
+
+        val ownerId = registrarUsuario("expediente-owner", "propietario")
+        val caregiverAcceptedId = registrarUsuario("expediente-cg-aceptado", "cuidador")
+        val caregiverAjenoId = registrarUsuario("expediente-cg-ajeno", "cuidador")
+
+        val petRes = post(
+            "/api/pets",
+            mapOf("owner_id" to ownerId, "name" to "Firulais", "species" to "Perro", "breed" to "Mestizo", "size" to "MEDIANO", "age" to 2)
+        )
+        assertEquals(HttpStatus.CREATED, petRes.statusCode)
+        val petId = json(petRes)["id"].asInt()
+
+        // El dueno siempre puede ver el expediente de su propia mascota.
+        val ownerViewRes = get("/api/pets/$petId/expediente?usuario_id=$ownerId")
+        assertEquals(HttpStatus.OK, ownerViewRes.statusCode, "el dueno deberia poder ver el expediente de su mascota")
+
+        // Un cuidador cualquiera puede ver el expediente ANTES de ofertar, mientras la solicitud siga PENDIENTE.
+        val requestRes = post(
+            "/api/service-requests",
+            mapOf(
+                "owner_id" to ownerId,
+                "pet_id" to petId,
+                "service_type_id" to 1,
+                "title" to "Paseo de prueba",
+                "description" to "Paseo corto",
+                "requested_date" to "2026-09-25",
+                "start_time" to "10:00",
+                "end_time" to "11:00"
+            )
+        )
+        assertEquals(HttpStatus.CREATED, requestRes.statusCode)
+        val requestId = json(requestRes)["id"].asInt()
+
+        val beforeOfferRes = get("/api/pets/$petId/expediente?usuario_id=$caregiverAjenoId")
+        assertEquals(
+            HttpStatus.OK, beforeOfferRes.statusCode,
+            "cualquier cuidador deberia poder ver el expediente mientras la solicitud esta PENDIENTE"
+        )
+
+        // caregiverAcceptedId se postula y es aceptado -> debe poder ver el expediente durante el servicio.
+        val applicationRes = post(
+            "/api/service-applications",
+            mapOf("service_request_id" to requestId, "caregiver_id" to caregiverAcceptedId, "initiated_by" to "CAREGIVER")
+        )
+        assertEquals(HttpStatus.CREATED, applicationRes.statusCode)
+        val applicationId = json(applicationRes)["id"].asInt()
+
+        val acceptRes = put("/api/service-applications/$applicationId/status", mapOf("status" to "ACCEPTED"))
+        assertEquals(HttpStatus.OK, acceptRes.statusCode)
+
+        val duringServiceRes = get("/api/pets/$petId/expediente?usuario_id=$caregiverAcceptedId")
+        assertEquals(
+            HttpStatus.OK, duringServiceRes.statusCode,
+            "el cuidador con la postulacion aceptada deberia poder ver el expediente durante el servicio"
+        )
+
+        // Ahora que la solicitud ya no esta PENDIENTE, un cuidador ajeno sin postulacion no deberia poder verlo.
+        val ajenoDuringRes = get("/api/pets/$petId/expediente?usuario_id=$caregiverAjenoId")
+        assertEquals(
+            HttpStatus.FORBIDDEN, ajenoDuringRes.statusCode,
+            "un cuidador sin relacion con la solicitud no deberia poder ver el expediente una vez que dejo de estar PENDIENTE"
+        )
+
+        // Al completar el servicio, el cuidador que lo realizo sigue pudiendo verlo (referencia historica).
+        val doneRes = put("/api/service-applications/$applicationId/status", mapOf("status" to "DONE_BY_CAREGIVER"))
+        assertEquals(HttpStatus.OK, doneRes.statusCode)
+        val completeRes = put("/api/service-applications/$applicationId/status", mapOf("status" to "COMPLETED"))
+        assertEquals(HttpStatus.OK, completeRes.statusCode)
+
+        val afterServiceRes = get("/api/pets/$petId/expediente?usuario_id=$caregiverAcceptedId")
+        assertEquals(
+            HttpStatus.OK, afterServiceRes.statusCode,
+            "el cuidador que completo el servicio deberia poder seguir viendo el expediente despues"
+        )
+    }
 }
