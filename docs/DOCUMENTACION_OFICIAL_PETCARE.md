@@ -67,7 +67,9 @@ registran mascotas propias, y no se permite vender animales en la plataforma.
    emergencia, reacciones rápidas (❤️/⭐/👍), evidencia fotográfica antes/después.
 7. **Calificar**: al completar el servicio, calificación con estrellas y comentario.
 8. **Expediente médico**: por cada perro, historial de vacunas, desparasitación, alergias,
-   medicamentos, cirugías, peso y notas — con alertas cuando una vacuna está por vencer.
+   medicamentos, cirugías, peso y notas — con alertas cuando una vacuna está por vencer. El
+   dueño es el único que puede agregar, editar o eliminar entradas; un cuidador solo puede
+   consultarlo en modo lectura (ver sección 3, punto 8).
 9. **Alerta de mascota perdida**: si un perro se pierde, botón "🚨 Mi perro se perdió" que
    notifica a usuarios cercanos (1/5/10 km) y permite recibir avistamientos.
 10. **Calendario**: vista mensual/semanal de todos los servicios programados.
@@ -86,6 +88,9 @@ registran mascotas propias, y no se permite vender animales en la plataforma.
    EXPERIMENTADO → ELITE, o EN_OBSERVACIÓN) según servicios completados, calificación promedio
    y cancelaciones — visible en el perfil y en las tarjetas de ofertas.
 7. **Botón de emergencia**: reportar una emergencia durante un servicio activo.
+8. **Expediente médico del perro (solo lectura)**: desde la tarjeta de una solicitud PENDIENTE
+   (antes de ofertar), desde el detalle de un servicio ACCEPTED o ya COMPLETED, o desde la
+   barra superior del chat — nunca puede agregar, editar ni eliminar entradas.
 
 ## 4. Guía de Usuario — Administrador
 
@@ -322,7 +327,8 @@ only"). Para una key real, ver
 - Foto obligatoria antes/después de un servicio (con cola offline)
 - Calendario integrado (vista mensual y semanal)
 - Llamadas telefónicas directas
-- Expediente médico con alertas de vacunas próximas
+- Expediente médico con alertas de vacunas próximas, visible en modo lectura para el cuidador
+  antes de ofertar (solicitud PENDIENTE), y durante/después de un servicio aceptado
 - Alerta de mascota perdida con avistamientos y notificación por proximidad
 - Modo "no molestar"
 - Modo oscuro, soporte para inglés, accesibilidad (WCAG AA), caché offline del chat
@@ -428,9 +434,6 @@ de especies (ver estudios de la UICN y TRAFFIC sobre comercio ilegal de fauna en
   real, hay que agregar autenticación de administrador dedicada.
 - La "disponibilidad" del calendario (`GET /api/calendario`) siempre devuelve una lista vacía —
   el backend no tiene todavía un concepto de horario de disponibilidad del cuidador.
-- El expediente médico solo es visible para el dueño de la mascota en la app — no existe aún
-  una pantalla de detalle de mascota para que el cuidador lo vea antes, durante o después de un
-  servicio activo. Es la mejora de mayor prioridad pendiente sobre este módulo.
 - No hay rate limiting en la API (ver sección 9, Seguridad) — pendiente antes de exponerla
   públicamente sin un proxy/gateway que lo aplique.
 - No existe un flujo dedicado para que un cuidador o propietario reporte que la otra parte "no
@@ -460,7 +463,6 @@ de especies (ver estudios de la UICN y TRAFFIC sobre comercio ilegal de fauna en
   dedicada.
 - Adjuntar fotos directamente a los avistamientos de mascota perdida.
 - Rate limiting y hardening general de la API antes de un despliegue público.
-- Expediente médico visible para el cuidador antes/durante/después del servicio.
 
 ---
 
