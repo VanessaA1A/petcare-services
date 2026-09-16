@@ -8,22 +8,29 @@ package com.petcare.service
 import com.petcare.dto.CalendarioDisponibilidadDTO
 import com.petcare.dto.CalendarioResponse
 import com.petcare.dto.CalendarioServicioDTO
+import com.petcare.repository.DisponibilidadCuidadorRepository
 import com.petcare.repository.ServiceApplicationRepository
 import com.petcare.repository.ServiceRequestRepository
 import org.springframework.stereotype.Service
+import java.time.DateTimeException
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
 
 /**
- * Bloque 9 (calendario integrado). "disponibilidad" queda como lista vacia por ahora: el
- * backend no tiene hoy un concepto de horario de disponibilidad del cuidador (la app Android
- * tiene un `AvailabilityEntity` puramente local en Room, sin endpoint que lo sincronice) -
- * agregar ese concepto es un feature aparte, fuera del alcance de este bloque.
+ * Bloque 9 (calendario integrado). "disponibilidad" expande el horario semanal recurrente del
+ * cuidador (tabla `disponibilidad_cuidador`, configurado via DisponibilidadCuidadorController)
+ * en fechas concretas dentro del mes/anio pedido, para que la app pueda pintarlas junto a los
+ * servicios agendados. Convencion de `dia_semana`: 0 = lunes ... 6 = domingo (coincide con la
+ * grilla Lun-Dom de la pantalla de disponibilidad en la app).
  */
 @Service
 class CalendarioService(
     private val requestRepository: ServiceRequestRepository,
-    private val applicationRepository: ServiceApplicationRepository
+    private val applicationRepository: ServiceApplicationRepository,
+    private val disponibilidadRepository: DisponibilidadCuidadorRepository
 ) {
     private val estadosProgramados = setOf("ACCEPTED", "DONE_BY_CAREGIVER", "COMPLETED")
+    private val formatoHora = DateTimeFormatter.ofPattern("HH:mm")
 
     fun obtenerCalendario(usuarioId: Int, mes: Int, anio: Int): CalendarioResponse {
         val prefijo = "%04d-%02d".format(anio, mes)
@@ -57,7 +64,29 @@ class CalendarioService(
 
         return CalendarioResponse(
             servicios = (comoPropietario + comoCuidador).sortedBy { it.fecha },
-            disponibilidad = emptyList<CalendarioDisponibilidadDTO>()
+            disponibilidad = expandirDisponibilidad(usuarioId, mes, anio)
         )
+    }
+
+    private fun expandirDisponibilidad(cuidadorId: Int, mes: Int, anio: Int): List<CalendarioDisponibilidadDTO> {
+        val horarios = disponibilidadRepository.findByCuidadorIdAndActivoTrueOrderByDiaSemanaAscHoraInicioAsc(cuidadorId)
+        if (horarios.isEmpty()) return emptyList()
+
+        val yearMonth = try {
+            YearMonth.of(anio, mes)
+        } catch (e: DateTimeException) {
+            return emptyList()
+        }
+        val porDiaSemana = horarios.groupBy { it.diaSemana }
+
+        return (1..yearMonth.lengthOfMonth()).mapNotNull { dia ->
+            val fecha = yearMonth.atDay(dia)
+            val diaSemana = fecha.dayOfWeek.value - 1 // lunes=0 ... domingo=6
+            val slots = porDiaSemana[diaSemana] ?: return@mapNotNull null
+            CalendarioDisponibilidadDTO(
+                fecha = fecha.toString(),
+                horas = slots.map { "${it.horaInicio.format(formatoHora)}-${it.horaFin.format(formatoHora)}" }
+            )
+        }
     }
 }

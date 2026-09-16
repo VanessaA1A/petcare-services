@@ -55,6 +55,7 @@ public class SecurityConfig {
                     .requestMatchers("/api/busquedas-guardadas/**").permitAll()
                     .requestMatchers("/api/usuarios/verificar-rol").permitAll()
                     .requestMatchers("/api/usuarios/fcm-token").permitAll()
+                    .requestMatchers("/api/cuidadores/**").permitAll()
                     .requestMatchers("/api/usuarios/no-molestar").permitAll()
                     .requestMatchers("/api/usuarios/{id}/foto").permitAll()
                     // Bloque 13: login propio del panel de administracion. La pagina HTML (/admin/**)

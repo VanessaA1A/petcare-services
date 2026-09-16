@@ -379,4 +379,87 @@ class IntegrationTest {
             "el cuidador que completo el servicio deberia poder seguir viendo el expediente despues"
         )
     }
+
+    @Test
+    fun `disponibilidad del cuidador se puede publicar, valida solapamiento y aparece expandida en el calendario`() {
+        val suffix = uniqueSuffix()
+        val password = "Passw0rd!23"
+
+        fun registrarUsuario(prefijo: String, rol: String): Int {
+            val email = "$prefijo-$suffix@petcare-test.local"
+            val regRes = post("/api/auth/registro", mapOf("email" to email, "password" to password))
+            assertEquals(HttpStatus.CREATED, regRes.statusCode)
+            val id = json(regRes)["user"]["id"].asInt()
+            val roleRes = post("/api/users/$id/roles", mapOf("role" to rol))
+            assertEquals(HttpStatus.OK, roleRes.statusCode)
+            return id
+        }
+
+        val caregiverId = registrarUsuario("disponibilidad-cg", "cuidador")
+        val ownerId = registrarUsuario("disponibilidad-owner", "propietario")
+
+        // GET /api/calendario exige un JWT valido (a diferencia del resto de la API, que confia
+        // en el usuario_id que manda el cliente) - hace falta loguearse para obtener un token.
+        val caregiverEmail = "disponibilidad-cg-$suffix@petcare-test.local"
+        val loginRes = post("/api/auth/login", mapOf("email" to caregiverEmail, "password" to password))
+        assertEquals(HttpStatus.OK, loginRes.statusCode)
+        val caregiverToken = json(loginRes)["session"]["tokenSesion"].asText()
+
+        val hoy = java.time.LocalDate.now()
+        val diaSemana = hoy.dayOfWeek.value - 1 // lunes=0 ... domingo=6
+
+        // Un propietario no puede publicar disponibilidad (no es cuidador).
+        val rechazoRes = post(
+            "/api/cuidadores/disponibilidad",
+            mapOf("usuario_id" to ownerId, "dia_semana" to diaSemana, "hora_inicio" to "09:00", "hora_fin" to "12:00")
+        )
+        assertEquals(HttpStatus.FORBIDDEN, rechazoRes.statusCode, "un propietario no deberia poder publicar disponibilidad")
+
+        // El cuidador si puede.
+        val crearRes = post(
+            "/api/cuidadores/disponibilidad",
+            mapOf("usuario_id" to caregiverId, "dia_semana" to diaSemana, "hora_inicio" to "09:00", "hora_fin" to "12:00")
+        )
+        assertEquals(HttpStatus.CREATED, crearRes.statusCode)
+        val disponibilidadId = json(crearRes)["id"].asInt()
+
+        // Un horario solapado el mismo dia se rechaza.
+        val solapadoRes = post(
+            "/api/cuidadores/disponibilidad",
+            mapOf("usuario_id" to caregiverId, "dia_semana" to diaSemana, "hora_inicio" to "10:00", "hora_fin" to "11:00")
+        )
+        assertEquals(HttpStatus.BAD_REQUEST, solapadoRes.statusCode, "un horario solapado deberia rechazarse")
+
+        // Un horario en otro dia de la semana (sin solape) se acepta.
+        val otroDiaRes = post(
+            "/api/cuidadores/disponibilidad",
+            mapOf("usuario_id" to caregiverId, "dia_semana" to (diaSemana + 1) % 7, "hora_inicio" to "09:00", "hora_fin" to "12:00")
+        )
+        assertEquals(HttpStatus.CREATED, otroDiaRes.statusCode)
+
+        val listarRes = get("/api/cuidadores/$caregiverId/disponibilidad")
+        assertEquals(HttpStatus.OK, listarRes.statusCode)
+        assertEquals(2, json(listarRes).size())
+
+        // El calendario del mes actual debe incluir hoy con el rango publicado.
+        val calendarioRes = get("/api/calendario?usuario_id=$caregiverId&mes=${hoy.monthValue}&anio=${hoy.year}", caregiverToken)
+        assertEquals(HttpStatus.OK, calendarioRes.statusCode)
+        val disponibilidadCalendario = json(calendarioRes)["disponibilidad"]
+        val entradaHoy = disponibilidadCalendario.find { it["fecha"].asText() == hoy.toString() }
+        assertNotNull(entradaHoy, "el calendario deberia incluir la disponibilidad de hoy")
+        val horas = entradaHoy!!["horas"].map { it.asText() }
+        assertTrue(horas.contains("09:00-12:00"), "el rango publicado deberia aparecer expandido en el calendario")
+
+        // Eliminar y verificar que ya no aparece.
+        val eliminarRes = restTemplate.exchange(
+            "/api/cuidadores/disponibilidad/$disponibilidadId?usuario_id=$caregiverId",
+            HttpMethod.DELETE,
+            HttpEntity<Any>(headers()),
+            String::class.java
+        )
+        assertEquals(HttpStatus.NO_CONTENT, eliminarRes.statusCode)
+
+        val listarTrasEliminarRes = get("/api/cuidadores/$caregiverId/disponibilidad")
+        assertEquals(1, json(listarTrasEliminarRes).size())
+    }
 }
